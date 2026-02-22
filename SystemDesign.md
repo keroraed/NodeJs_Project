@@ -7,8 +7,8 @@
 | Role    | Description                                      |
 | ------- | ------------------------------------------------ |
 | Admin   | Pre-seeded account. Manages doctors, specialties, views everything. |
-| Doctor  | Registers → needs admin approval. Manages schedule & appointments. |
-| Patient | Registers freely. Browses doctors and books appointments. |
+| Doctor  | Registers → needs admin approval. Manages schedule & appointments.  |
+| Patient | Registers freely. Browses doctors and books appointments.           |
 
 ---
 
