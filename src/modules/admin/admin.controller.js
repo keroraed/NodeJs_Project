@@ -21,7 +21,10 @@ class AdminController {
    * PATCH /api/admin/users/:id/block
    */
   async blockUnblockUser(req, res) {
-    const user = await adminService.blockUnblockUser(req.params.id);
+    const user = await adminService.blockUnblockUser(
+      req.params.id,
+      req.user._id,
+    );
     res.status(200).json({ success: true, data: user });
   }
 

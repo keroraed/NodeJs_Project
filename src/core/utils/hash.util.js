@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 
 const SALT_ROUNDS = 12;
 
@@ -22,4 +23,13 @@ const compareValue = async (plainText, hashed) => {
   return bcrypt.compare(plainText, hashed);
 };
 
-module.exports = { hashValue, compareValue };
+/**
+ * Create a deterministic SHA-256 hash (for reset tokens)
+ * @param {string} token
+ * @returns {string} hex hash
+ */
+const hashToken = (token) => {
+  return crypto.createHash("sha256").update(token).digest("hex");
+};
+
+module.exports = { hashValue, compareValue, hashToken };

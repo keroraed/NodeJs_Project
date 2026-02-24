@@ -12,10 +12,17 @@ const registerSchema = {
       "string.email": "Please provide a valid email",
       "any.required": "Email is required",
     }),
-    password: Joi.string().min(6).max(128).required().messages({
-      "string.min": "Password must be at least 6 characters",
-      "any.required": "Password is required",
-    }),
+    password: Joi.string()
+      .min(6)
+      .max(128)
+      .pattern(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/)
+      .required()
+      .messages({
+        "string.min": "Password must be at least 6 characters",
+        "string.pattern.base":
+          "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+        "any.required": "Password is required",
+      }),
     phone: Joi.string()
       .pattern(/^01[0125][0-9]{8}$/)
       .messages({
@@ -84,10 +91,17 @@ const resetPasswordSchema = {
     resetToken: Joi.string().required().messages({
       "any.required": "Reset token is required",
     }),
-    newPassword: Joi.string().min(6).max(128).required().messages({
-      "string.min": "Password must be at least 6 characters",
-      "any.required": "New password is required",
-    }),
+    newPassword: Joi.string()
+      .min(6)
+      .max(128)
+      .pattern(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/)
+      .required()
+      .messages({
+        "string.min": "Password must be at least 6 characters",
+        "string.pattern.base":
+          "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+        "any.required": "New password is required",
+      }),
     confirmPassword: Joi.string()
       .valid(Joi.ref("newPassword"))
       .required()
@@ -98,6 +112,15 @@ const resetPasswordSchema = {
   }),
 };
 
+const resendOtpSchema = {
+  body: Joi.object({
+    email: Joi.string().trim().email().lowercase().required().messages({
+      "string.email": "Please provide a valid email",
+      "any.required": "Email is required",
+    }),
+  }),
+};
+
 module.exports = {
   registerSchema,
   loginSchema,
@@ -105,4 +128,5 @@ module.exports = {
   forgotPasswordSchema,
   verifyOtpSchema,
   resetPasswordSchema,
+  resendOtpSchema,
 };

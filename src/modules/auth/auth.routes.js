@@ -9,6 +9,7 @@ const {
   forgotPasswordSchema,
   verifyOtpSchema,
   resetPasswordSchema,
+  resendOtpSchema,
 } = require("./auth.validation");
 
 const router = Router();
@@ -26,6 +27,13 @@ router.post(
   authLimiter,
   validate(verifyEmailSchema),
   authController.verifyEmail,
+);
+
+router.post(
+  "/resend-otp",
+  authLimiter,
+  validate(resendOtpSchema),
+  authController.resendOtp,
 );
 
 router.post("/login", authLimiter, validate(loginSchema), authController.login);

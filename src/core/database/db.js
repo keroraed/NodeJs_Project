@@ -17,11 +17,14 @@ const connectDB = async () => {
     });
 
     // Graceful shutdown
-    process.on("SIGINT", async () => {
+    const gracefulShutdown = async () => {
       await mongoose.connection.close();
       logger.info("MongoDB connection closed through app termination");
       process.exit(0);
-    });
+    };
+
+    process.on("SIGINT", gracefulShutdown);
+    process.on("SIGTERM", gracefulShutdown);
   } catch (error) {
     logger.error(`MongoDB connection failed: ${error.message}`);
     process.exit(1);

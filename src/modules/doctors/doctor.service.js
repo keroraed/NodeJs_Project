@@ -1,6 +1,7 @@
 const doctorRepository = require("./doctor.repository");
-const Appointment = require("../appointments/appointment.model");
+const appointmentRepository = require("../appointments/appointment.repository");
 const ApiError = require("../../core/errors/ApiError");
+const { VALID_STATUS_TRANSITIONS } = require("../../core/config/constants");
 const {
   getPagination,
   paginatedResponse,
@@ -39,22 +40,17 @@ class DoctorService {
     }
 
     const { page, limit, skip } = getPagination(query);
-    const filter = { doctor: doctor._id };
+    const filter = {};
     if (query.status) {
       filter.status = query.status;
     }
 
-    const [appointments, total] = await Promise.all([
-      Appointment.find(filter)
-        .populate({
-          path: "patient",
-          populate: { path: "user", select: "name email phone" },
-        })
-        .skip(skip)
-        .limit(limit)
-        .sort({ date: -1 }),
-      Appointment.countDocuments(filter),
-    ]);
+    const { appointments, total } = await appointmentRepository.findByDoctor(
+      doctor._id,
+      filter,
+      skip,
+      limit,
+    );
 
     return paginatedResponse(appointments, total, page, limit);
   }
@@ -68,15 +64,24 @@ class DoctorService {
       throw ApiError.notFound("Doctor profile not found");
     }
 
-    const appointment = await Appointment.findOne({
-      _id: appointmentId,
-      doctor: doctor._id,
-    });
+    const appointment = await appointmentRepository.findOneByIdAndDoctor(
+      appointmentId,
+      doctor._id,
+    );
     if (!appointment) {
       throw ApiError.notFound("Appointment not found");
     }
 
     if (updateData.status) {
+      const allowedTransitions = VALID_STATUS_TRANSITIONS[appointment.status];
+      if (
+        !allowedTransitions ||
+        !allowedTransitions.includes(updateData.status)
+      ) {
+        throw ApiError.badRequest(
+          `Cannot transition from '${appointment.status}' to '${updateData.status}'`,
+        );
+      }
       appointment.status = updateData.status;
     }
     if (updateData.notes !== undefined) {

@@ -55,6 +55,11 @@ const userSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+    otpAttempts: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
     resetToken: {
       type: String,
       select: false,
@@ -71,6 +76,7 @@ const userSchema = new mongoose.Schema(
         delete ret.password;
         delete ret.otp;
         delete ret.otpExpiry;
+        delete ret.otpAttempts;
         delete ret.resetToken;
         delete ret.resetTokenExpiry;
         delete ret.__v;

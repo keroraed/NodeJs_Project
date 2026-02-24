@@ -46,7 +46,11 @@ class AdminService {
   /**
    * PATCH /api/admin/users/:id/block — Block/unblock user (toggle isActive)
    */
-  async blockUnblockUser(userId) {
+  async blockUnblockUser(userId, requestingUserId) {
+    if (userId === requestingUserId.toString()) {
+      throw ApiError.badRequest("You cannot block/unblock yourself");
+    }
+
     const user = await User.findById(userId);
     if (!user) {
       throw ApiError.notFound("User not found");

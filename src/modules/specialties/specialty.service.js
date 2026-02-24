@@ -1,4 +1,5 @@
 const specialtyRepository = require("./specialty.repository");
+const DoctorProfile = require("../doctors/doctor.model");
 const ApiError = require("../../core/errors/ApiError");
 
 class SpecialtyService {
@@ -33,6 +34,14 @@ class SpecialtyService {
     if (!specialty) {
       throw ApiError.notFound("Specialty not found");
     }
+
+    const doctorCount = await DoctorProfile.countDocuments({ specialty: id });
+    if (doctorCount > 0) {
+      throw ApiError.badRequest(
+        `Cannot delete specialty. ${doctorCount} doctor(s) are assigned to it.`,
+      );
+    }
+
     await specialtyRepository.deleteById(id);
     return { message: "Specialty deleted successfully" };
   }

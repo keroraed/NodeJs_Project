@@ -11,7 +11,7 @@ class SpecialtyRepository {
   }
 
   async findByName(name) {
-    return Specialty.findOne({ name: new RegExp(`^${name}$`, "i") });
+    return Specialty.findOne({ name }).collation({ locale: "en", strength: 2 });
   }
 
   async findAll() {

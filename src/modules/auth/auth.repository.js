@@ -13,9 +13,9 @@ class AuthRepository {
     return User.findOne({ resetToken }).select("+resetToken +resetTokenExpiry");
   }
 
-  async create(userData) {
+  async create(userData, session = null) {
     const user = new User(userData);
-    return user.save();
+    return session ? user.save({ session }) : user.save();
   }
 
   async updateById(id, updateData) {

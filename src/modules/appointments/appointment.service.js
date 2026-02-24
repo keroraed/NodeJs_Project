@@ -3,6 +3,7 @@ const doctorRepository = require("../doctors/doctor.repository");
 const patientRepository = require("../patients/patient.repository");
 const ApiError = require("../../core/errors/ApiError");
 const { sendEmail } = require("../../core/utils/sendEmail.util");
+const logger = require("../../core/logger/logger");
 
 class AppointmentService {
   /**
@@ -29,6 +30,35 @@ class AppointmentService {
     // Normalize date to start of day for consistent storage
     const appointmentDate = new Date(data.date);
     appointmentDate.setHours(0, 0, 0, 0);
+
+    // Validate against doctor's availability schedule
+    if (doctor.availability && doctor.availability.length > 0) {
+      const dayNames = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ];
+      const appointmentDay = dayNames[appointmentDate.getDay()];
+      const dayAvailability = doctor.availability.find(
+        (a) => a.day === appointmentDay,
+      );
+      if (!dayAvailability) {
+        throw ApiError.badRequest("Doctor is not available on this day");
+      }
+      const isWithinSlot = dayAvailability.slots.some(
+        (slot) =>
+          data.startTime >= slot.startTime && data.endTime <= slot.endTime,
+      );
+      if (!isWithinSlot) {
+        throw ApiError.badRequest(
+          "Requested time is not within doctor's available slots",
+        );
+      }
+    }
 
     // Check for double booking
     const conflict = await appointmentRepository.findConflict(
@@ -72,7 +102,9 @@ class AppointmentService {
         `,
       });
     } catch (error) {
-      // Don't fail the booking if email fails
+      logger.warn(
+        `Failed to send appointment confirmation email: ${error.message}`,
+      );
     }
 
     return await appointmentRepository.findById(appointment._id);

@@ -20,7 +20,7 @@ const authenticate = async (req, res, next) => {
       throw ApiError.unauthorized("Access token is required");
     }
 
-    const decoded = verifyToken(token, "access");
+    const decoded = verifyToken(token);
 
     const user = await User.findById(decoded.userId);
 
@@ -49,7 +49,7 @@ const optionalAuth = async (req, res, next) => {
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.split(" ")[1];
       if (token) {
-        const decoded = verifyToken(token, "access");
+        const decoded = verifyToken(token);
         const user = await User.findById(decoded.userId);
         if (user && user.isActive) {
           req.user = user;

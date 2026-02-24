@@ -1,4 +1,6 @@
 const Appointment = require("./appointment.model");
+const { APPOINTMENT_STATUS } = require("../../core/config/constants");
+const { getDayBounds } = require("../../core/utils/date.util");
 
 class AppointmentRepository {
   async create(data) {
@@ -10,18 +12,14 @@ class AppointmentRepository {
    * Check if a time slot is already booked for a doctor on a given date
    */
   async findConflict(doctorId, date, startTime, endTime, excludeId = null) {
-    const appointmentDate = new Date(date);
-    const startOfDay = new Date(appointmentDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(appointmentDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    const { startOfDay, endOfDay } = getDayBounds(date);
 
     const query = {
       doctor: doctorId,
       date: { $gte: startOfDay, $lte: endOfDay },
-      startTime: startTime,
-      endTime: endTime,
-      status: { $ne: "cancelled" },
+      startTime: { $lt: endTime },
+      endTime: { $gt: startTime },
+      status: { $ne: APPOINTMENT_STATUS.CANCELLED },
     };
     if (excludeId) {
       query._id = { $ne: excludeId };
@@ -80,6 +78,26 @@ class AppointmentRepository {
       Appointment.countDocuments(filter),
     ]);
     return { appointments, total };
+  }
+
+  async findByDoctor(doctorId, filter = {}, skip = 0, limit = 10) {
+    const query = { doctor: doctorId, ...filter };
+    const [appointments, total] = await Promise.all([
+      Appointment.find(query)
+        .populate({
+          path: "patient",
+          populate: { path: "user", select: "name email phone" },
+        })
+        .skip(skip)
+        .limit(limit)
+        .sort({ date: -1 }),
+      Appointment.countDocuments(query),
+    ]);
+    return { appointments, total };
+  }
+
+  async findOneByIdAndDoctor(appointmentId, doctorId) {
+    return Appointment.findOne({ _id: appointmentId, doctor: doctorId });
   }
 }
 

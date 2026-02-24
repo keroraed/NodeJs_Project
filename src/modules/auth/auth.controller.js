@@ -53,6 +53,15 @@ class AuthController {
     const result = await authService.resetPassword(resetToken, newPassword);
     res.status(200).json({ success: true, ...result });
   }
+
+  /**
+   * POST /api/auth/resend-otp
+   */
+  async resendOtp(req, res) {
+    const { email } = req.body;
+    const result = await authService.resendOtp(email);
+    res.status(200).json({ success: true, ...result });
+  }
 }
 
 module.exports = new AuthController();

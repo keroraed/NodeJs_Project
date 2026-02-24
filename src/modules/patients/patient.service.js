@@ -1,7 +1,12 @@
 const patientRepository = require("./patient.repository");
 const Appointment = require("../appointments/appointment.model");
 const appointmentRepository = require("../appointments/appointment.repository");
+const doctorRepository = require("../doctors/doctor.repository");
 const ApiError = require("../../core/errors/ApiError");
+const {
+  APPOINTMENT_STATUS,
+  VALID_STATUS_TRANSITIONS,
+} = require("../../core/config/constants");
 const {
   getPagination,
   paginatedResponse,
@@ -71,11 +76,17 @@ class PatientService {
     }
 
     // Cancel
-    if (updateData.status === "cancelled") {
-      if (appointment.status === "cancelled") {
-        throw ApiError.badRequest("Appointment is already cancelled");
+    if (updateData.status === APPOINTMENT_STATUS.CANCELLED) {
+      const allowedTransitions = VALID_STATUS_TRANSITIONS[appointment.status];
+      if (
+        !allowedTransitions ||
+        !allowedTransitions.includes(APPOINTMENT_STATUS.CANCELLED)
+      ) {
+        throw ApiError.badRequest(
+          `Cannot cancel an appointment with status '${appointment.status}'`,
+        );
       }
-      appointment.status = "cancelled";
+      appointment.status = APPOINTMENT_STATUS.CANCELLED;
       await appointment.save();
       return appointment;
     }
@@ -85,6 +96,37 @@ class PatientService {
       const newDate = updateData.date || appointment.date;
       const newStartTime = updateData.startTime || appointment.startTime;
       const newEndTime = updateData.endTime || appointment.endTime;
+
+      // Validate against doctor's availability
+      const doctor = await doctorRepository.findById(appointment.doctor);
+      if (doctor && doctor.availability && doctor.availability.length > 0) {
+        const dayNames = [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+        ];
+        const appointmentDate = new Date(newDate);
+        const appointmentDay = dayNames[appointmentDate.getDay()];
+        const dayAvailability = doctor.availability.find(
+          (a) => a.day === appointmentDay,
+        );
+        if (!dayAvailability) {
+          throw ApiError.badRequest("Doctor is not available on this day");
+        }
+        const isWithinSlot = dayAvailability.slots.some(
+          (slot) =>
+            newStartTime >= slot.startTime && newEndTime <= slot.endTime,
+        );
+        if (!isWithinSlot) {
+          throw ApiError.badRequest(
+            "Requested time is not within doctor's available slots",
+          );
+        }
+      }
 
       // Check for conflicts
       const conflict = await appointmentRepository.findConflict(
@@ -101,7 +143,7 @@ class PatientService {
       appointment.date = newDate;
       appointment.startTime = newStartTime;
       appointment.endTime = newEndTime;
-      appointment.status = "pending";
+      appointment.status = APPOINTMENT_STATUS.PENDING;
       await appointment.save();
       return appointment;
     }
