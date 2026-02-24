@@ -1,0 +1,36 @@
+const Patient = require("./patient.model");
+
+class PatientRepository {
+  async create(data) {
+    const patient = new Patient(data);
+    return patient.save();
+  }
+
+  async findByUserId(userId) {
+    return Patient.findOne({ user: userId }).populate(
+      "user",
+      "name email phone gender dateOfBirth address",
+    );
+  }
+
+  async findById(id) {
+    return Patient.findById(id).populate(
+      "user",
+      "name email phone gender dateOfBirth address",
+    );
+  }
+
+  async updateByUserId(userId, updateData) {
+    return Patient.findOneAndUpdate({ user: userId }, updateData, {
+      new: true,
+      runValidators: true,
+    }).populate("user", "name email phone gender dateOfBirth address");
+  }
+
+  async exists(userId) {
+    const count = await Patient.countDocuments({ user: userId });
+    return count > 0;
+  }
+}
+
+module.exports = new PatientRepository();
