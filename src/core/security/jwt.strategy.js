@@ -1,6 +1,6 @@
-const jwt = require("jsonwebtoken");
-const appConfig = require("../config/app.config");
-const ApiError = require("../errors/ApiError");
+import jwt from "jsonwebtoken";
+import appConfig from "../config/app.config.js";
+import ApiError from "../errors/ApiError.js";
 
 /**
  * Verify a JWT token
@@ -21,4 +21,4 @@ const verifyToken = (token) => {
   }
 };
 
-module.exports = { verifyToken };
+export { verifyToken };

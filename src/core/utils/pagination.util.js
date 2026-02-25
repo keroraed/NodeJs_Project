@@ -1,8 +1,4 @@
-const {
-  DEFAULT_PAGE,
-  DEFAULT_LIMIT,
-  MAX_LIMIT,
-} = require("../config/constants");
+import { DEFAULT_PAGE, DEFAULT_LIMIT, MAX_LIMIT } from "../config/constants.js";
 
 /**
  * Build pagination object from query params
@@ -46,4 +42,4 @@ const paginatedResponse = (data, total, page, limit) => {
   };
 };
 
-module.exports = { getPagination, paginatedResponse };
+export { getPagination, paginatedResponse };

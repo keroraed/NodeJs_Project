@@ -1,22 +1,22 @@
-const crypto = require("crypto");
-const mongoose = require("mongoose");
-const authRepository = require("./auth.repository");
-const ApiError = require("../../core/errors/ApiError");
-const {
+import crypto from "crypto";
+import mongoose from "mongoose";
+import authRepository from "./auth.repository.js";
+import ApiError from "../../core/errors/ApiError.js";
+import {
   hashValue,
   compareValue,
   hashToken,
-} = require("../../core/utils/hash.util");
-const { generateToken } = require("../../core/utils/token.util");
-const generateOtp = require("../../core/utils/generateOtp");
-const {
+} from "../../core/utils/hash.util.js";
+import { generateToken } from "../../core/utils/token.util.js";
+import generateOtp from "../../core/utils/generateOtp.js";
+import {
   sendOtpEmail,
   sendPasswordResetEmail,
-} = require("../../core/utils/sendEmail.util");
-const { addMinutes, isExpired } = require("../../core/utils/date.util");
-const { OTP_EXPIRY_MINUTES, ROLES } = require("../../core/config/constants");
-const Patient = require("../patients/patient.model");
-const DoctorProfile = require("../doctors/doctor.model");
+} from "../../core/utils/sendEmail.util.js";
+import { addMinutes, isExpired } from "../../core/utils/date.util.js";
+import { OTP_EXPIRY_MINUTES, ROLES } from "../../core/config/constants.js";
+import Patient from "../patients/patient.model.js";
+import DoctorProfile from "../doctors/doctor.model.js";
 
 class AuthService {
   /**
@@ -306,4 +306,4 @@ class AuthService {
   }
 }
 
-module.exports = new AuthService();
+export default new AuthService();

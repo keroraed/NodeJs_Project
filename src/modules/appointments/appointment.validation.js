@@ -1,4 +1,4 @@
-const Joi = require("joi");
+import Joi from "joi";
 
 const bookAppointmentSchema = {
   body: Joi.object({
@@ -30,4 +30,4 @@ const bookAppointmentSchema = {
   }),
 };
 
-module.exports = { bookAppointmentSchema };
+export { bookAppointmentSchema };

@@ -1,4 +1,4 @@
-const appointmentService = require("./appointment.service");
+import appointmentService from "./appointment.service.js";
 
 class AppointmentController {
   /**
@@ -13,4 +13,4 @@ class AppointmentController {
   }
 }
 
-module.exports = new AppointmentController();
+export default new AppointmentController();

@@ -1,4 +1,4 @@
-const Specialty = require("./specialty.model");
+import Specialty from "./specialty.model.js";
 
 class SpecialtyRepository {
   async create(data) {
@@ -30,4 +30,4 @@ class SpecialtyRepository {
   }
 }
 
-module.exports = new SpecialtyRepository();
+export default new SpecialtyRepository();

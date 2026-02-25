@@ -2,15 +2,17 @@
  * Seed script to create the initial admin user
  * Run with: npm run seed
  */
-const mongoose = require("mongoose");
-const path = require("path");
-const dotenv = require("dotenv");
+import mongoose from "mongoose";
+import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+import User from "../src/modules/users/user.model.js";
+import { hashValue } from "../src/core/utils/hash.util.js";
+import { ROLES } from "../src/core/config/constants.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
-
-const User = require("../src/modules/users/user.model");
-const { hashValue } = require("../src/core/utils/hash.util");
-const { ROLES } = require("../src/core/config/constants");
 
 const ADMIN_DATA = {
   name: "Admin",

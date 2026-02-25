@@ -1,10 +1,10 @@
-const { Router } = require("express");
-const authRoutes = require("../modules/auth/auth.routes");
-const patientRoutes = require("../modules/patients/patient.routes");
-const doctorRoutes = require("../modules/doctors/doctor.routes");
-const appointmentRoutes = require("../modules/appointments/appointment.routes");
-const specialtyRoutes = require("../modules/specialties/specialty.routes");
-const adminRoutes = require("../modules/admin/admin.routes");
+import { Router } from "express";
+import authRoutes from "../modules/auth/auth.routes.js";
+import patientRoutes from "../modules/patients/patient.routes.js";
+import doctorRoutes from "../modules/doctors/doctor.routes.js";
+import appointmentRoutes from "../modules/appointments/appointment.routes.js";
+import specialtyRoutes from "../modules/specialties/specialty.routes.js";
+import adminRoutes from "../modules/admin/admin.routes.js";
 
 const router = Router();
 
@@ -25,4 +25,4 @@ router.use("/appointments", appointmentRoutes);
 router.use("/specialties", specialtyRoutes);
 router.use("/admin", adminRoutes);
 
-module.exports = router;
+export default router;

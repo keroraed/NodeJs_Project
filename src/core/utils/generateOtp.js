@@ -1,5 +1,5 @@
-const crypto = require("crypto");
-const { OTP_LENGTH } = require("../config/constants");
+import crypto from "crypto";
+import { OTP_LENGTH } from "../config/constants.js";
 
 /**
  * Generate a numeric OTP of specified length
@@ -13,4 +13,4 @@ const generateOtp = (length = OTP_LENGTH) => {
   return otp.toString();
 };
 
-module.exports = generateOtp;
+export default generateOtp;

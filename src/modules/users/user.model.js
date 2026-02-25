@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const { ROLES, GENDER } = require("../../core/config/constants");
+import mongoose from "mongoose";
+import { ROLES, GENDER } from "../../core/config/constants.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -88,4 +88,4 @@ const userSchema = new mongoose.Schema(
 
 const User = mongoose.model("User", userSchema);
 
-module.exports = User;
+export default User;

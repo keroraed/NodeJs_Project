@@ -47,4 +47,4 @@ const getDayBounds = (date) => {
   return { startOfDay, endOfDay };
 };
 
-module.exports = { addMinutes, isExpired, formatDate, getDayBounds };
+export { addMinutes, isExpired, formatDate, getDayBounds };

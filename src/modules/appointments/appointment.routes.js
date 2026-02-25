@@ -1,10 +1,10 @@
-const { Router } = require("express");
-const appointmentController = require("./appointment.controller");
-const validate = require("../../core/middlewares/validate.middleware");
-const { authenticate } = require("../../core/middlewares/auth.middleware");
-const authorize = require("../../core/middlewares/role.middleware");
-const { ROLES } = require("../../core/config/constants");
-const { bookAppointmentSchema } = require("./appointment.validation");
+import { Router } from "express";
+import appointmentController from "./appointment.controller.js";
+import validate from "../../core/middlewares/validate.middleware.js";
+import { authenticate } from "../../core/middlewares/auth.middleware.js";
+import authorize from "../../core/middlewares/role.middleware.js";
+import { ROLES } from "../../core/config/constants.js";
+import { bookAppointmentSchema } from "./appointment.validation.js";
 
 const router = Router();
 
@@ -17,4 +17,4 @@ router.post(
   appointmentController.bookAppointment,
 );
 
-module.exports = router;
+export default router;

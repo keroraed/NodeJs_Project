@@ -1,9 +1,9 @@
-const appointmentRepository = require("./appointment.repository");
-const doctorRepository = require("../doctors/doctor.repository");
-const patientRepository = require("../patients/patient.repository");
-const ApiError = require("../../core/errors/ApiError");
-const { sendEmail } = require("../../core/utils/sendEmail.util");
-const logger = require("../../core/logger/logger");
+import appointmentRepository from "./appointment.repository.js";
+import doctorRepository from "../doctors/doctor.repository.js";
+import patientRepository from "../patients/patient.repository.js";
+import ApiError from "../../core/errors/ApiError.js";
+import { sendEmail } from "../../core/utils/sendEmail.util.js";
+import logger from "../../core/logger/logger.js";
 
 class AppointmentService {
   /**
@@ -111,4 +111,4 @@ class AppointmentService {
   }
 }
 
-module.exports = new AppointmentService();
+export default new AppointmentService();

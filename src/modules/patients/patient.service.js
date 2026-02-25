@@ -1,16 +1,16 @@
-const patientRepository = require("./patient.repository");
-const Appointment = require("../appointments/appointment.model");
-const appointmentRepository = require("../appointments/appointment.repository");
-const doctorRepository = require("../doctors/doctor.repository");
-const ApiError = require("../../core/errors/ApiError");
-const {
+import patientRepository from "./patient.repository.js";
+import Appointment from "../appointments/appointment.model.js";
+import appointmentRepository from "../appointments/appointment.repository.js";
+import doctorRepository from "../doctors/doctor.repository.js";
+import ApiError from "../../core/errors/ApiError.js";
+import {
   APPOINTMENT_STATUS,
   VALID_STATUS_TRANSITIONS,
-} = require("../../core/config/constants");
-const {
+} from "../../core/config/constants.js";
+import {
   getPagination,
   paginatedResponse,
-} = require("../../core/utils/pagination.util");
+} from "../../core/utils/pagination.util.js";
 
 class PatientService {
   /**
@@ -152,4 +152,4 @@ class PatientService {
   }
 }
 
-module.exports = new PatientService();
+export default new PatientService();

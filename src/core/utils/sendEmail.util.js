@@ -1,6 +1,6 @@
-const nodemailer = require("nodemailer");
-const appConfig = require("../config/app.config");
-const logger = require("../logger/logger");
+import nodemailer from "nodemailer";
+import appConfig from "../config/app.config.js";
+import logger from "../logger/logger.js";
 
 // Create reusable transporter
 const transporter = nodemailer.createTransport({
@@ -99,4 +99,4 @@ const sendPasswordResetEmail = async (to, otp, name) => {
   });
 };
 
-module.exports = { sendEmail, sendOtpEmail, sendPasswordResetEmail };
+export { sendEmail, sendOtpEmail, sendPasswordResetEmail };

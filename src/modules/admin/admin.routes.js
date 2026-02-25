@@ -1,14 +1,14 @@
-const { Router } = require("express");
-const adminController = require("./admin.controller");
-const validate = require("../../core/middlewares/validate.middleware");
-const { authenticate } = require("../../core/middlewares/auth.middleware");
-const authorize = require("../../core/middlewares/role.middleware");
-const { ROLES } = require("../../core/config/constants");
-const {
+import { Router } from "express";
+import adminController from "./admin.controller.js";
+import validate from "../../core/middlewares/validate.middleware.js";
+import { authenticate } from "../../core/middlewares/auth.middleware.js";
+import authorize from "../../core/middlewares/role.middleware.js";
+import { ROLES } from "../../core/config/constants.js";
+import {
   objectIdSchema,
   createSpecialtySchema,
   updateSpecialtySchema,
-} = require("./admin.validation");
+} from "./admin.validation.js";
 
 const router = Router();
 
@@ -56,4 +56,4 @@ router.delete(
   adminController.deleteSpecialty,
 );
 
-module.exports = router;
+export default router;

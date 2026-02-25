@@ -1,6 +1,6 @@
-const Appointment = require("./appointment.model");
-const { APPOINTMENT_STATUS } = require("../../core/config/constants");
-const { getDayBounds } = require("../../core/utils/date.util");
+import Appointment from "./appointment.model.js";
+import { APPOINTMENT_STATUS } from "../../core/config/constants.js";
+import { getDayBounds } from "../../core/utils/date.util.js";
 
 class AppointmentRepository {
   async create(data) {
@@ -101,4 +101,4 @@ class AppointmentRepository {
   }
 }
 
-module.exports = new AppointmentRepository();
+export default new AppointmentRepository();

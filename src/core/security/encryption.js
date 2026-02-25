@@ -1,5 +1,5 @@
-const CryptoJS = require("crypto-js");
-const appConfig = require("../config/app.config");
+import CryptoJS from "crypto-js";
+import appConfig from "../config/app.config.js";
 
 const SECRET_KEY = appConfig.encryptionKey;
 
@@ -24,4 +24,4 @@ const decrypt = (cipherText) => {
   return bytes.toString(CryptoJS.enc.Utf8);
 };
 
-module.exports = { encrypt, decrypt };
+export { encrypt, decrypt };

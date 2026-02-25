@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const DAYS = [
   "Sunday",
@@ -67,4 +67,4 @@ doctorProfileSchema.index({ specialty: 1 });
 
 const DoctorProfile = mongoose.model("DoctorProfile", doctorProfileSchema);
 
-module.exports = DoctorProfile;
+export default DoctorProfile;

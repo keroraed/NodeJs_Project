@@ -47,4 +47,4 @@ const ERROR_CODES = Object.freeze({
   RATE_LIMIT_EXCEEDED: "RATE_LIMIT_EXCEEDED",
 });
 
-module.exports = ERROR_CODES;
+export default ERROR_CODES;

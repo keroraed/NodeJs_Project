@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const specialtySchema = new mongoose.Schema(
   {
@@ -22,4 +22,4 @@ const specialtySchema = new mongoose.Schema(
 
 const Specialty = mongoose.model("Specialty", specialtySchema);
 
-module.exports = Specialty;
+export default Specialty;

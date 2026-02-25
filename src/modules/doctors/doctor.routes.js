@@ -1,17 +1,17 @@
-const { Router } = require("express");
-const doctorController = require("./doctor.controller");
-const validate = require("../../core/middlewares/validate.middleware");
-const {
+import { Router } from "express";
+import doctorController from "./doctor.controller.js";
+import validate from "../../core/middlewares/validate.middleware.js";
+import {
   authenticate,
   optionalAuth,
-} = require("../../core/middlewares/auth.middleware");
-const authorize = require("../../core/middlewares/role.middleware");
-const { ROLES } = require("../../core/config/constants");
-const {
+} from "../../core/middlewares/auth.middleware.js";
+import authorize from "../../core/middlewares/role.middleware.js";
+import { ROLES } from "../../core/config/constants.js";
+import {
   updateDoctorProfileSchema,
   updateAppointmentSchema,
   getDoctorByIdSchema,
-} = require("./doctor.validation");
+} from "./doctor.validation.js";
 
 const router = Router();
 
@@ -61,4 +61,4 @@ router.get(
   doctorController.getDoctorAvailability,
 );
 
-module.exports = router;
+export default router;

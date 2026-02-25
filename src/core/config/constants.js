@@ -42,7 +42,7 @@ const VALID_STATUS_TRANSITIONS = Object.freeze({
   [APPOINTMENT_STATUS.COMPLETED]: [],
 });
 
-module.exports = {
+export {
   ROLES,
   APPOINTMENT_STATUS,
   GENDER,

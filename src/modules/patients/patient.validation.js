@@ -1,5 +1,5 @@
-const Joi = require("joi");
-const { APPOINTMENT_STATUS } = require("../../core/config/constants");
+import Joi from "joi";
+import { APPOINTMENT_STATUS } from "../../core/config/constants.js";
 
 const updatePatientProfileSchema = {
   body: Joi.object({
@@ -22,7 +22,4 @@ const updateAppointmentSchema = {
   }).min(1),
 };
 
-module.exports = {
-  updatePatientProfileSchema,
-  updateAppointmentSchema,
-};
+export { updatePatientProfileSchema, updateAppointmentSchema };

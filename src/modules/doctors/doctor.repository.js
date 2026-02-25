@@ -1,4 +1,4 @@
-const DoctorProfile = require("./doctor.model");
+import DoctorProfile from "./doctor.model.js";
 
 class DoctorRepository {
   async create(data) {
@@ -55,4 +55,4 @@ class DoctorRepository {
   }
 }
 
-module.exports = new DoctorRepository();
+export default new DoctorRepository();

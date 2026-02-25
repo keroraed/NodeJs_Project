@@ -1,16 +1,16 @@
-const express = require("express");
-const cors = require("cors");
-const morgan = require("morgan");
-const helmet = require("helmet");
-require("express-async-errors");
+import express from "express";
+import cors from "cors";
+import morgan from "morgan";
+import helmet from "helmet";
+import "express-async-errors";
 
-const routes = require("./routes");
-const {
+import routes from "./routes/index.js";
+import {
   errorHandler,
   notFoundHandler,
-} = require("./core/middlewares/error.middleware");
-const { apiLimiter } = require("./core/middlewares/rateLimit.middleware");
-const logger = require("./core/logger/logger");
+} from "./core/middlewares/error.middleware.js";
+import { apiLimiter } from "./core/middlewares/rateLimit.middleware.js";
+import logger from "./core/logger/logger.js";
 
 const app = express();
 
@@ -54,4 +54,4 @@ app.use(notFoundHandler);
 // Global error handler (must be last)
 app.use(errorHandler);
 
-module.exports = app;
+export default app;

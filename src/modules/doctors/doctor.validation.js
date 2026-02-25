@@ -1,5 +1,5 @@
-const Joi = require("joi");
-const { APPOINTMENT_STATUS } = require("../../core/config/constants");
+import Joi from "joi";
+import { APPOINTMENT_STATUS } from "../../core/config/constants.js";
 
 const DAYS = [
   "Sunday",
@@ -65,7 +65,7 @@ const getDoctorByIdSchema = {
   }),
 };
 
-module.exports = {
+export {
   updateDoctorProfileSchema,
   updateAppointmentSchema,
   getDoctorByIdSchema,

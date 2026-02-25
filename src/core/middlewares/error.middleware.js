@@ -1,5 +1,5 @@
-const ApiError = require("../errors/ApiError");
-const logger = require("../logger/logger");
+import ApiError from "../errors/ApiError.js";
+import logger from "../logger/logger.js";
 
 /**
  * Global error handling middleware
@@ -87,4 +87,4 @@ const notFoundHandler = (req, res, next) => {
   next(ApiError.notFound(`Route ${req.originalUrl} not found`));
 };
 
-module.exports = { errorHandler, notFoundHandler };
+export { errorHandler, notFoundHandler };

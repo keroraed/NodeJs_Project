@@ -1,12 +1,12 @@
-const User = require("../users/user.model");
-const DoctorProfile = require("../doctors/doctor.model");
-const Appointment = require("../appointments/appointment.model");
-const specialtyService = require("../specialties/specialty.service");
-const ApiError = require("../../core/errors/ApiError");
-const {
+import User from "../users/user.model.js";
+import DoctorProfile from "../doctors/doctor.model.js";
+import Appointment from "../appointments/appointment.model.js";
+import specialtyService from "../specialties/specialty.service.js";
+import ApiError from "../../core/errors/ApiError.js";
+import {
   getPagination,
   paginatedResponse,
-} = require("../../core/utils/pagination.util");
+} from "../../core/utils/pagination.util.js";
 
 class AdminService {
   /**
@@ -116,4 +116,4 @@ class AdminService {
   }
 }
 
-module.exports = new AdminService();
+export default new AdminService();

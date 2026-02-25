@@ -1,5 +1,5 @@
-const bcrypt = require("bcryptjs");
-const crypto = require("crypto");
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 const SALT_ROUNDS = 12;
 
@@ -32,4 +32,4 @@ const hashToken = (token) => {
   return crypto.createHash("sha256").update(token).digest("hex");
 };
 
-module.exports = { hashValue, compareValue, hashToken };
+export { hashValue, compareValue, hashToken };

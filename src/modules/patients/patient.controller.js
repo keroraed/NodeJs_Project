@@ -1,4 +1,4 @@
-const patientService = require("./patient.service");
+import patientService from "./patient.service.js";
 
 class PatientController {
   /**
@@ -41,4 +41,4 @@ class PatientController {
   }
 }
 
-module.exports = new PatientController();
+export default new PatientController();

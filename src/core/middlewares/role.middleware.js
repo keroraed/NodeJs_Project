@@ -1,4 +1,4 @@
-const ApiError = require("../errors/ApiError");
+import ApiError from "../errors/ApiError.js";
 
 /**
  * Role-based authorization middleware
@@ -21,4 +21,4 @@ const authorize = (...allowedRoles) => {
   };
 };
 
-module.exports = authorize;
+export default authorize;

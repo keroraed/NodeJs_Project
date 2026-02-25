@@ -1,6 +1,6 @@
-const specialtyRepository = require("./specialty.repository");
-const DoctorProfile = require("../doctors/doctor.model");
-const ApiError = require("../../core/errors/ApiError");
+import specialtyRepository from "./specialty.repository.js";
+import DoctorProfile from "../doctors/doctor.model.js";
+import ApiError from "../../core/errors/ApiError.js";
 
 class SpecialtyService {
   async createSpecialty(data) {
@@ -47,4 +47,4 @@ class SpecialtyService {
   }
 }
 
-module.exports = new SpecialtyService();
+export default new SpecialtyService();

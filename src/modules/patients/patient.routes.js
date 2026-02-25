@@ -1,13 +1,13 @@
-const { Router } = require("express");
-const patientController = require("./patient.controller");
-const validate = require("../../core/middlewares/validate.middleware");
-const { authenticate } = require("../../core/middlewares/auth.middleware");
-const authorize = require("../../core/middlewares/role.middleware");
-const { ROLES } = require("../../core/config/constants");
-const {
+import { Router } from "express";
+import patientController from "./patient.controller.js";
+import validate from "../../core/middlewares/validate.middleware.js";
+import { authenticate } from "../../core/middlewares/auth.middleware.js";
+import authorize from "../../core/middlewares/role.middleware.js";
+import { ROLES } from "../../core/config/constants.js";
+import {
   updatePatientProfileSchema,
   updateAppointmentSchema,
-} = require("./patient.validation");
+} from "./patient.validation.js";
 
 const router = Router();
 
@@ -34,4 +34,4 @@ router.patch(
   patientController.updateAppointment,
 );
 
-module.exports = router;
+export default router;

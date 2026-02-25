@@ -1,5 +1,5 @@
-const Joi = require("joi");
-const { GENDER, ROLES } = require("../../core/config/constants");
+import Joi from "joi";
+import { GENDER, ROLES } from "../../core/config/constants.js";
 
 const registerSchema = {
   body: Joi.object({
@@ -121,7 +121,7 @@ const resendOtpSchema = {
   }),
 };
 
-module.exports = {
+export {
   registerSchema,
   loginSchema,
   verifyEmailSchema,

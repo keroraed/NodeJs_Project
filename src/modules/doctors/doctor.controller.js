@@ -1,4 +1,4 @@
-const doctorService = require("./doctor.service");
+import doctorService from "./doctor.service.js";
 
 class DoctorController {
   /**
@@ -71,4 +71,4 @@ class DoctorController {
   }
 }
 
-module.exports = new DoctorController();
+export default new DoctorController();

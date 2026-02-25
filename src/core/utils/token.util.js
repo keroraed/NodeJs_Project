@@ -1,5 +1,5 @@
-const jwt = require("jsonwebtoken");
-const appConfig = require("../config/app.config");
+import jwt from "jsonwebtoken";
+import appConfig from "../config/app.config.js";
 
 /**
  * Generate a JWT token
@@ -12,4 +12,4 @@ const generateToken = (payload) => {
   });
 };
 
-module.exports = { generateToken };
+export { generateToken };

@@ -1,4 +1,4 @@
-const env = require("./env");
+import env from "./env.js";
 
 const appConfig = {
   // Server
@@ -38,4 +38,4 @@ const appConfig = {
   frontendUrl: env.FRONTEND_URL,
 };
 
-module.exports = appConfig;
+export default appConfig;

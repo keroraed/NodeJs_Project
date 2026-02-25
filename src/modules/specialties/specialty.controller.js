@@ -1,4 +1,4 @@
-const specialtyService = require("./specialty.service");
+import specialtyService from "./specialty.service.js";
 
 class SpecialtyController {
   /**
@@ -10,4 +10,4 @@ class SpecialtyController {
   }
 }
 
-module.exports = new SpecialtyController();
+export default new SpecialtyController();

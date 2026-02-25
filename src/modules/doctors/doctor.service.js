@@ -1,11 +1,11 @@
-const doctorRepository = require("./doctor.repository");
-const appointmentRepository = require("../appointments/appointment.repository");
-const ApiError = require("../../core/errors/ApiError");
-const { VALID_STATUS_TRANSITIONS } = require("../../core/config/constants");
-const {
+import doctorRepository from "./doctor.repository.js";
+import appointmentRepository from "../appointments/appointment.repository.js";
+import ApiError from "../../core/errors/ApiError.js";
+import { VALID_STATUS_TRANSITIONS } from "../../core/config/constants.js";
+import {
   getPagination,
   paginatedResponse,
-} = require("../../core/utils/pagination.util");
+} from "../../core/utils/pagination.util.js";
 
 class DoctorService {
   /**
@@ -141,4 +141,4 @@ class DoctorService {
   }
 }
 
-module.exports = new DoctorService();
+export default new DoctorService();

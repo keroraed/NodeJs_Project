@@ -1,6 +1,6 @@
-const ApiError = require("../errors/ApiError");
-const { verifyToken } = require("../security/jwt.strategy");
-const User = require("../../modules/users/user.model");
+import ApiError from "../errors/ApiError.js";
+import { verifyToken } from "../security/jwt.strategy.js";
+import User from "../../modules/users/user.model.js";
 
 /**
  * Authentication middleware
@@ -63,4 +63,4 @@ const optionalAuth = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticate, optionalAuth };
+export { authenticate, optionalAuth };

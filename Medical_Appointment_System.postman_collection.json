@@ -1,0 +1,1492 @@
+{
+  "info": {
+    "name": "Medical Appointment System API",
+    "description": "Complete API collection for the Medical Appointment System backend.\n\n## Base URL\n`http://localhost:5000/api`\n\n## Authentication\nMost endpoints require a Bearer token obtained from **POST /auth/login**.\nSet the `token` collection variable after login — all protected requests use `{{token}}` automatically.\n\n## Roles\n- `patient` — can book and manage their own appointments\n- `doctor` — can manage their profile, availability, and incoming appointments\n- `admin` — full access to users, doctors, appointments, and specialties\n\n## Status flow\n`pending → confirmed → completed`\n`pending → cancelled`\n`confirmed → cancelled`",
+    "_postman_id": "med-appt-system-v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "JWT Bearer token — paste value from login response here"
+    },
+    {
+      "key": "doctorProfileId",
+      "value": "",
+      "type": "string",
+      "description": "DoctorProfile _id (returned from GET /doctors or admin approve)"
+    },
+    {
+      "key": "appointmentId",
+      "value": "",
+      "type": "string",
+      "description": "Appointment _id"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string",
+      "description": "User _id"
+    },
+    {
+      "key": "specialtyId",
+      "value": "",
+      "type": "string",
+      "description": "Specialty _id"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Verify that the API server is running."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Medical Appointment System API is running\",\n  \"timestamp\": \"2026-02-25T10:00:00.000Z\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "description": "Public authentication endpoints. All routes are rate-limited.",
+      "item": [
+        {
+          "name": "Register (Patient)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ahmed Hassan\",\n  \"email\": \"ahmed.patient@example.com\",\n  \"password\": \"Secure@123\",\n  \"phone\": \"01012345678\",\n  \"gender\": \"male\",\n  \"dateOfBirth\": \"1995-06-15\",\n  \"address\": \"123 Cairo Street, Egypt\",\n  \"role\": \"patient\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new **patient** account. A 6-digit OTP will be sent to the provided email for verification.\n\n**Password rules:** min 6 chars, must contain uppercase, lowercase, digit, and special character (`!@#$%^&*`).\n\n**Phone:** Egyptian mobile numbers only — `01[0125]XXXXXXXX`.\n\n**role:** `patient` (default) or `doctor`."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Registration successful. Please check your email to verify your account.\",\n  \"user\": {\n    \"id\": \"64f1a2b3c4d5e6f7a8b9c0d1\",\n    \"name\": \"Ahmed Hassan\",\n    \"email\": \"ahmed.patient@example.com\",\n    \"role\": \"patient\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "409 Conflict — Email already registered",
+              "status": "Conflict",
+              "code": 409,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Email already registered\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — Validation error",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Validation Error\",\n  \"errors\": [\n    {\n      \"field\": \"password\",\n      \"message\": \"Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character\"\n    }\n  ]\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Register (Doctor)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Sara Mahmoud\",\n  \"email\": \"sara.doctor@example.com\",\n  \"password\": \"Secure@123\",\n  \"phone\": \"01098765432\",\n  \"gender\": \"female\",\n  \"dateOfBirth\": \"1985-03-20\",\n  \"role\": \"doctor\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new **doctor** account. Doctor profiles start as unapproved — an admin must approve them before they appear in public listings."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Registration successful. Please check your email to verify your account.\",\n  \"user\": {\n    \"id\": \"64f1a2b3c4d5e6f7a8b9c0d2\",\n    \"name\": \"Dr. Sara Mahmoud\",\n    \"email\": \"sara.doctor@example.com\",\n    \"role\": \"doctor\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ahmed.patient@example.com\",\n  \"otp\": \"834721\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-email",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-email"]
+            },
+            "description": "Verify the user's email address using the 6-digit OTP sent during registration.\n\n- OTP expires after **10 minutes**.\n- Max **5 failed attempts** before lockout.\n- After lockout, use **Resend OTP** to get a fresh code."
+          },
+          "response": [
+            {
+              "name": "200 OK — Verified successfully",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Email verified successfully\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — OTP expired",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"OTP has expired. Please request a new one.\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — Invalid OTP",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Invalid OTP code\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "429 Too Many Requests — Max attempts exceeded",
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Too many failed attempts. Please request a new OTP.\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Resend OTP",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ahmed.patient@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/resend-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "resend-otp"]
+            },
+            "description": "Request a new OTP be sent to the email address. Use this when the previous OTP expired or when max attempts were exceeded."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"OTP resent successfully. Please check your email.\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — Already verified",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Email is already verified\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "  console.log('Token saved to collection variable: token');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ahmed.patient@example.com\",\n  \"password\": \"Secure@123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with email and password. The response includes a JWT token valid for **7 days**.\n\nThe **Tests** script automatically saves the token to the `token` collection variable."
+          },
+          "response": [
+            {
+              "name": "200 OK — Patient login",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"user\": {\n    \"id\": \"64f1a2b3c4d5e6f7a8b9c0d1\",\n    \"name\": \"Ahmed Hassan\",\n    \"email\": \"ahmed.patient@example.com\",\n    \"role\": \"patient\"\n  },\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NGYxYTJiM2M0ZDVlNmY3YThiOWMwZDEiLCJyb2xlIjoicGF0aWVudCIsImlhdCI6MTcwODg1NjAwMCwiZXhwIjoxNzA5NDYwODAwfQ.example_signature\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "401 Unauthorized — Wrong credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Invalid email or password\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "403 Forbidden — Email not verified",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Please verify your email before logging in\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "403 Forbidden — Account blocked",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Your account has been blocked\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ahmed.patient@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            },
+            "description": "Request a password reset OTP. For security reasons, the response is always the same regardless of whether the email exists (no email enumeration)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"If the email is registered, you will receive a password reset OTP.\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Verify OTP (Password Reset)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ahmed.patient@example.com\",\n  \"otp\": \"192847\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-otp"]
+            },
+            "description": "Verify the password-reset OTP. On success, a one-time `resetToken` is returned. Use it immediately in the **Reset Password** request."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"OTP verified successfully\",\n  \"resetToken\": \"a3f5b2c9d1e8f047abc123def456789012345678901234567890abcdef012345\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — Invalid OTP",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Invalid OTP code\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resetToken\": \"a3f5b2c9d1e8f047abc123def456789012345678901234567890abcdef012345\",\n  \"newPassword\": \"NewSecure@456\",\n  \"confirmPassword\": \"NewSecure@456\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            },
+            "description": "Set a new password using the `resetToken` obtained from **Verify OTP**. The token is single-use and expires shortly."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Password reset successfully. You can now log in with your new password.\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — Passwords don't match",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Validation Error\",\n  \"errors\": [\n    {\n      \"field\": \"confirmPassword\",\n      \"message\": \"Passwords do not match\"\n    }\n  ]\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — Invalid/expired token",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Invalid or expired reset token\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Patient",
+      "description": "Endpoints for authenticated patients only.\n\n**Required header:** `Authorization: Bearer {{token}}` (role must be `patient`)",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/patients/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients", "profile"]
+            },
+            "description": "Retrieve the authenticated patient's profile, including their linked user data and medical history."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0e1\",\n    \"user\": {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d1\",\n      \"name\": \"Ahmed Hassan\",\n      \"email\": \"ahmed.patient@example.com\",\n      \"role\": \"patient\",\n      \"phone\": \"01012345678\",\n      \"gender\": \"male\",\n      \"dateOfBirth\": \"1995-06-15T00:00:00.000Z\",\n      \"address\": \"123 Cairo Street, Egypt\",\n      \"isActive\": true,\n      \"isVerified\": true,\n      \"createdAt\": \"2026-02-25T10:00:00.000Z\",\n      \"updatedAt\": \"2026-02-25T10:00:00.000Z\"\n    },\n    \"medicalHistory\": \"Patient has a history of mild hypertension.\",\n    \"createdAt\": \"2026-02-25T10:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T12:30:00.000Z\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "401 Unauthorized — No token",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"No token provided\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "403 Forbidden — Wrong role",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Access denied\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicalHistory\": \"Mild hypertension, managed with diet. No known drug allergies.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/patients/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients", "profile"]
+            },
+            "description": "Update the patient's medical history. At least one field must be provided."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0e1\",\n    \"user\": \"64f1a2b3c4d5e6f7a8b9c0d1\",\n    \"medicalHistory\": \"Mild hypertension, managed with diet. No known drug allergies.\",\n    \"createdAt\": \"2026-02-25T10:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T14:00:00.000Z\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Get My Appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/patients/appointments?page=1&limit=10&status=pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients", "appointments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page (default: 10, max: 100)"
+                },
+                {
+                  "key": "status",
+                  "value": "pending",
+                  "description": "Filter by status: pending | confirmed | cancelled | completed"
+                }
+              ]
+            },
+            "description": "List all appointments for the logged-in patient with pagination and optional status filter."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0f1\",\n      \"doctor\": {\n        \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n        \"user\": {\n          \"name\": \"Dr. Sara Mahmoud\",\n          \"email\": \"sara.doctor@example.com\"\n        },\n        \"specialty\": {\n          \"_id\": \"64f1a2b3c4d5e6f7a8b9c0a1\",\n          \"name\": \"Cardiology\"\n        },\n        \"bio\": \"Board-certified cardiologist with 10 years of experience.\"\n      },\n      \"patient\": \"64f1a2b3c4d5e6f7a8b9c0e1\",\n      \"date\": \"2026-03-10T00:00:00.000Z\",\n      \"startTime\": \"10:00\",\n      \"endTime\": \"10:30\",\n      \"status\": \"pending\",\n      \"notes\": \"\",\n      \"createdAt\": \"2026-02-25T11:00:00.000Z\",\n      \"updatedAt\": \"2026-02-25T11:00:00.000Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 10,\n    \"totalPages\": 1,\n    \"hasNextPage\": false,\n    \"hasPrevPage\": false\n  }\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Cancel Appointment",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"cancelled\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/patients/appointments/{{appointmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients", "appointments", "{{appointmentId}}"]
+            },
+            "description": "Cancel an appointment. Only `pending` or `confirmed` appointments can be cancelled."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0f1\",\n    \"doctor\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n    \"patient\": \"64f1a2b3c4d5e6f7a8b9c0e1\",\n    \"date\": \"2026-03-10T00:00:00.000Z\",\n    \"startTime\": \"10:00\",\n    \"endTime\": \"10:30\",\n    \"status\": \"cancelled\",\n    \"notes\": \"\",\n    \"createdAt\": \"2026-02-25T11:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T15:00:00.000Z\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — Cannot cancel completed",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Cannot cancel an appointment with status 'completed'\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Appointment not found\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Reschedule Appointment",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-03-12\",\n  \"startTime\": \"11:00\",\n  \"endTime\": \"11:30\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/patients/appointments/{{appointmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients", "appointments", "{{appointmentId}}"]
+            },
+            "description": "Reschedule an appointment to a new date/time. The new slot is validated against the doctor's availability schedule. Rescheduled appointments return to `pending` status."
+          },
+          "response": [
+            {
+              "name": "200 OK — Rescheduled",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0f1\",\n    \"doctor\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n    \"patient\": \"64f1a2b3c4d5e6f7a8b9c0e1\",\n    \"date\": \"2026-03-12T00:00:00.000Z\",\n    \"startTime\": \"11:00\",\n    \"endTime\": \"11:30\",\n    \"status\": \"pending\",\n    \"notes\": \"\",\n    \"createdAt\": \"2026-02-25T11:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T16:00:00.000Z\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — Outside availability",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Requested time is not within doctor's available slots\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "409 Conflict — Slot already booked",
+              "status": "Conflict",
+              "code": 409,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"This time slot is already booked\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Doctors (Public)",
+      "description": "Public endpoints to browse doctors. No authentication required (except for admin who sees all doctors including unapproved).",
+      "item": [
+        {
+          "name": "List Approved Doctors",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/doctors?page=1&limit=10&specialty={{specialtyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page (default: 10, max: 100)"
+                },
+                {
+                  "key": "specialty",
+                  "value": "{{specialtyId}}",
+                  "description": "Filter by specialty ObjectId (optional)"
+                }
+              ]
+            },
+            "description": "List all approved doctors available for booking. Optionally filter by specialty. If an admin token is provided, all doctors (including unapproved) are returned."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n      \"user\": {\n        \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d2\",\n        \"name\": \"Dr. Sara Mahmoud\",\n        \"email\": \"sara.doctor@example.com\",\n        \"phone\": \"01098765432\",\n        \"gender\": \"female\"\n      },\n      \"specialty\": {\n        \"_id\": \"64f1a2b3c4d5e6f7a8b9c0a1\",\n        \"name\": \"Cardiology\"\n      },\n      \"bio\": \"Board-certified cardiologist with 10 years of experience.\",\n      \"isApproved\": true,\n      \"availability\": [\n        {\n          \"day\": \"Monday\",\n          \"slots\": [\n            { \"startTime\": \"09:00\", \"endTime\": \"13:00\" },\n            { \"startTime\": \"15:00\", \"endTime\": \"18:00\" }\n          ]\n        },\n        {\n          \"day\": \"Wednesday\",\n          \"slots\": [\n            { \"startTime\": \"10:00\", \"endTime\": \"14:00\" }\n          ]\n        }\n      ],\n      \"createdAt\": \"2026-02-25T09:00:00.000Z\",\n      \"updatedAt\": \"2026-02-25T09:00:00.000Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 10,\n    \"totalPages\": 1,\n    \"hasNextPage\": false,\n    \"hasPrevPage\": false\n  }\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Get Doctor by ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/doctors/{{doctorProfileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors", "{{doctorProfileId}}"]
+            },
+            "description": "Get full details of a single doctor by their DoctorProfile `_id`."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n    \"user\": {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d2\",\n      \"name\": \"Dr. Sara Mahmoud\",\n      \"email\": \"sara.doctor@example.com\",\n      \"phone\": \"01098765432\",\n      \"gender\": \"female\"\n    },\n    \"specialty\": {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0a1\",\n      \"name\": \"Cardiology\"\n    },\n    \"bio\": \"Board-certified cardiologist with 10 years of experience.\",\n    \"isApproved\": true,\n    \"availability\": [\n      {\n        \"day\": \"Monday\",\n        \"slots\": [\n          { \"startTime\": \"09:00\", \"endTime\": \"13:00\" },\n          { \"startTime\": \"15:00\", \"endTime\": \"18:00\" }\n        ]\n      }\n    ],\n    \"createdAt\": \"2026-02-25T09:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T09:00:00.000Z\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Doctor not found\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Get Doctor Availability",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/doctors/{{doctorProfileId}}/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors", "{{doctorProfileId}}", "availability"]
+            },
+            "description": "Get only the availability schedule (working days and time slots) of a doctor. Use this to populate the appointment booking calendar."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"day\": \"Monday\",\n      \"slots\": [\n        { \"startTime\": \"09:00\", \"endTime\": \"13:00\" },\n        { \"startTime\": \"15:00\", \"endTime\": \"18:00\" }\n      ]\n    },\n    {\n      \"day\": \"Wednesday\",\n      \"slots\": [\n        { \"startTime\": \"10:00\", \"endTime\": \"14:00\" }\n      ]\n    },\n    {\n      \"day\": \"Saturday\",\n      \"slots\": [\n        { \"startTime\": \"09:00\", \"endTime\": \"12:00\" }\n      ]\n    }\n  ]\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Doctor (Protected)",
+      "description": "Endpoints for authenticated doctors to manage their own profile, availability, and appointments.\n\n**Required header:** `Authorization: Bearer {{token}}` (role must be `doctor`)",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/doctors/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors", "profile"]
+            },
+            "description": "Get the authenticated doctor's own profile including specialty and availability."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n    \"user\": {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d2\",\n      \"name\": \"Dr. Sara Mahmoud\",\n      \"email\": \"sara.doctor@example.com\",\n      \"phone\": \"01098765432\",\n      \"gender\": \"female\",\n      \"isActive\": true,\n      \"isVerified\": true\n    },\n    \"specialty\": {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0a1\",\n      \"name\": \"Cardiology\"\n    },\n    \"bio\": \"Board-certified cardiologist with 10 years of experience.\",\n    \"isApproved\": true,\n    \"availability\": [\n      {\n        \"day\": \"Monday\",\n        \"slots\": [\n          { \"startTime\": \"09:00\", \"endTime\": \"13:00\" }\n        ]\n      }\n    ],\n    \"createdAt\": \"2026-02-25T09:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T09:00:00.000Z\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialty\": \"64f1a2b3c4d5e6f7a8b9c0a1\",\n  \"bio\": \"Board-certified cardiologist with 10 years of experience at Cairo University Hospital.\",\n  \"availability\": [\n    {\n      \"day\": \"Monday\",\n      \"slots\": [\n        { \"startTime\": \"09:00\", \"endTime\": \"13:00\" },\n        { \"startTime\": \"15:00\", \"endTime\": \"18:00\" }\n      ]\n    },\n    {\n      \"day\": \"Wednesday\",\n      \"slots\": [\n        { \"startTime\": \"10:00\", \"endTime\": \"14:00\" }\n      ]\n    },\n    {\n      \"day\": \"Saturday\",\n      \"slots\": [\n        { \"startTime\": \"09:00\", \"endTime\": \"12:00\" }\n      ]\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/doctors/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors", "profile"]
+            },
+            "description": "Update specialty, bio, and/or availability schedule. At least one field must be provided.\n\n**Availability days:** Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday\n\n**Time format:** HH:mm (24-hour)"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n    \"user\": \"64f1a2b3c4d5e6f7a8b9c0d2\",\n    \"specialty\": \"64f1a2b3c4d5e6f7a8b9c0a1\",\n    \"bio\": \"Board-certified cardiologist with 10 years of experience at Cairo University Hospital.\",\n    \"isApproved\": true,\n    \"availability\": [\n      {\n        \"day\": \"Monday\",\n        \"slots\": [\n          { \"startTime\": \"09:00\", \"endTime\": \"13:00\" },\n          { \"startTime\": \"15:00\", \"endTime\": \"18:00\" }\n        ]\n      },\n      {\n        \"day\": \"Wednesday\",\n        \"slots\": [\n          { \"startTime\": \"10:00\", \"endTime\": \"14:00\" }\n        ]\n      },\n      {\n        \"day\": \"Saturday\",\n        \"slots\": [\n          { \"startTime\": \"09:00\", \"endTime\": \"12:00\" }\n        ]\n      }\n    ],\n    \"createdAt\": \"2026-02-25T09:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T16:00:00.000Z\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Get My Appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/doctors/appointments?page=1&limit=10&status=pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors", "appointments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                {
+                  "key": "status",
+                  "value": "pending",
+                  "description": "Filter: pending | confirmed | cancelled | completed"
+                }
+              ]
+            },
+            "description": "Get all appointments assigned to the logged-in doctor, with optional status filter and pagination."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0f1\",\n      \"doctor\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n      \"patient\": {\n        \"_id\": \"64f1a2b3c4d5e6f7a8b9c0e1\",\n        \"user\": {\n          \"name\": \"Ahmed Hassan\",\n          \"email\": \"ahmed.patient@example.com\",\n          \"phone\": \"01012345678\"\n        },\n        \"medicalHistory\": \"Mild hypertension\"\n      },\n      \"date\": \"2026-03-10T00:00:00.000Z\",\n      \"startTime\": \"10:00\",\n      \"endTime\": \"10:30\",\n      \"status\": \"pending\",\n      \"notes\": \"\",\n      \"createdAt\": \"2026-02-25T11:00:00.000Z\",\n      \"updatedAt\": \"2026-02-25T11:00:00.000Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 10,\n    \"totalPages\": 1,\n    \"hasNextPage\": false,\n    \"hasPrevPage\": false\n  }\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Update Appointment (Doctor)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\",\n  \"notes\": \"Please bring your previous ECG results and medication list.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/doctors/appointments/{{appointmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors", "appointments", "{{appointmentId}}"]
+            },
+            "description": "Update the status and/or notes of an appointment.\n\n**Valid transitions:**\n- `pending` → `confirmed` or `cancelled`\n- `confirmed` → `completed` or `cancelled`\n- `cancelled` → (no transitions)\n- `completed` → (no transitions)"
+          },
+          "response": [
+            {
+              "name": "200 OK — Confirmed",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0f1\",\n    \"doctor\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n    \"patient\": \"64f1a2b3c4d5e6f7a8b9c0e1\",\n    \"date\": \"2026-03-10T00:00:00.000Z\",\n    \"startTime\": \"10:00\",\n    \"endTime\": \"10:30\",\n    \"status\": \"confirmed\",\n    \"notes\": \"Please bring your previous ECG results and medication list.\",\n    \"createdAt\": \"2026-02-25T11:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T17:00:00.000Z\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — Invalid transition",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Cannot transition from 'completed' to 'confirmed'\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Appointments",
+      "description": "Book a new appointment. Patients only.",
+      "item": [
+        {
+          "name": "Book Appointment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctor\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n  \"date\": \"2026-03-10\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"10:30\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments"]
+            },
+            "description": "Book an appointment with an approved doctor.\n\n**Rules:**\n- `doctor` must be a valid DoctorProfile `_id` of an **approved** doctor.\n- `date` must be a future date.\n- `startTime` / `endTime` must match `HH:mm` 24-hour format.\n- The time slot must fall within the doctor's availability schedule for that weekday.\n- No double booking — the slot must not already be taken.\n- A confirmation email is sent to both patient and doctor."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Appointment booked successfully\",\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0f1\",\n    \"doctor\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n    \"patient\": \"64f1a2b3c4d5e6f7a8b9c0e1\",\n    \"date\": \"2026-03-10T00:00:00.000Z\",\n    \"startTime\": \"10:00\",\n    \"endTime\": \"10:30\",\n    \"status\": \"pending\",\n    \"notes\": \"\",\n    \"createdAt\": \"2026-02-25T11:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T11:00:00.000Z\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — Doctor not approved",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Doctor is not approved yet\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — Doctor not available on this day",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Doctor is not available on this day\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — Outside available slot",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Requested time is not within doctor's available slots\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "409 Conflict — Slot already booked",
+              "status": "Conflict",
+              "code": 409,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"This time slot is already booked\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 Not Found — Doctor not found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Doctor not found\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Specialties (Public)",
+      "description": "Public endpoint to retrieve the list of medical specialties.",
+      "item": [
+        {
+          "name": "List All Specialties",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/specialties",
+              "host": ["{{baseUrl}}"],
+              "path": ["specialties"]
+            },
+            "description": "Get all medical specialties. Use the `_id` values when filtering doctors by specialty or updating doctor profiles."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0a1\",\n      \"name\": \"Cardiology\",\n      \"createdAt\": \"2026-02-25T08:00:00.000Z\",\n      \"updatedAt\": \"2026-02-25T08:00:00.000Z\"\n    },\n    {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0a2\",\n      \"name\": \"Dermatology\",\n      \"createdAt\": \"2026-02-25T08:00:00.000Z\",\n      \"updatedAt\": \"2026-02-25T08:00:00.000Z\"\n    },\n    {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0a3\",\n      \"name\": \"Orthopedics\",\n      \"createdAt\": \"2026-02-25T08:00:00.000Z\",\n      \"updatedAt\": \"2026-02-25T08:00:00.000Z\"\n    }\n  ]\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Admin-only endpoints for full system management.\n\n**Required header:** `Authorization: Bearer {{token}}` (role must be `admin`)",
+      "item": [
+        {
+          "name": "Users",
+          "item": [
+            {
+              "name": "List All Users",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users?page=1&limit=10&role=doctor",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "users"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "10" },
+                    {
+                      "key": "role",
+                      "value": "doctor",
+                      "description": "Filter by role: patient | doctor | admin"
+                    }
+                  ]
+                },
+                "description": "Retrieve all users in the system with optional role filter and pagination."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d2\",\n      \"name\": \"Dr. Sara Mahmoud\",\n      \"email\": \"sara.doctor@example.com\",\n      \"role\": \"doctor\",\n      \"phone\": \"01098765432\",\n      \"gender\": \"female\",\n      \"dateOfBirth\": \"1985-03-20T00:00:00.000Z\",\n      \"isActive\": true,\n      \"isVerified\": true,\n      \"createdAt\": \"2026-02-25T09:00:00.000Z\",\n      \"updatedAt\": \"2026-02-25T09:00:00.000Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 10,\n    \"totalPages\": 1,\n    \"hasNextPage\": false,\n    \"hasPrevPage\": false\n  }\n}",
+                  "_postman_previewlanguage": "json"
+                }
+              ]
+            },
+            {
+              "name": "Block / Unblock User",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users/{{userId}}/block",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "users", "{{userId}}", "block"]
+                },
+                "description": "Toggle a user's `isActive` status. A blocked user cannot log in. \n\n**Note:** Admin cannot block themselves."
+              },
+              "response": [
+                {
+                  "name": "200 OK — User blocked",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d1\",\n    \"name\": \"Ahmed Hassan\",\n    \"email\": \"ahmed.patient@example.com\",\n    \"role\": \"patient\",\n    \"isActive\": false,\n    \"isVerified\": true,\n    \"createdAt\": \"2026-02-25T10:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T18:00:00.000Z\"\n  }\n}",
+                  "_postman_previewlanguage": "json"
+                },
+                {
+                  "name": "200 OK — User unblocked",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d1\",\n    \"name\": \"Ahmed Hassan\",\n    \"email\": \"ahmed.patient@example.com\",\n    \"role\": \"patient\",\n    \"isActive\": true,\n    \"isVerified\": true,\n    \"createdAt\": \"2026-02-25T10:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T18:30:00.000Z\"\n  }\n}",
+                  "_postman_previewlanguage": "json"
+                },
+                {
+                  "name": "400 Bad Request — Cannot block self",
+                  "status": "Bad Request",
+                  "code": 400,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"You cannot block/unblock yourself\"\n}",
+                  "_postman_previewlanguage": "json"
+                },
+                {
+                  "name": "404 Not Found",
+                  "status": "Not Found",
+                  "code": 404,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"User not found\"\n}",
+                  "_postman_previewlanguage": "json"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Doctors",
+          "item": [
+            {
+              "name": "Approve Doctor",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/doctors/{{doctorProfileId}}/approve",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "doctors", "{{doctorProfileId}}", "approve"]
+                },
+                "description": "Approve a doctor's profile so they appear in public listings and can accept appointments. The `id` param is the **DoctorProfile** `_id` (not the User `_id`)."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n    \"user\": {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d2\",\n      \"name\": \"Dr. Sara Mahmoud\",\n      \"email\": \"sara.doctor@example.com\"\n    },\n    \"specialty\": {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0a1\",\n      \"name\": \"Cardiology\"\n    },\n    \"bio\": \"Board-certified cardiologist with 10 years of experience.\",\n    \"isApproved\": true,\n    \"availability\": [],\n    \"createdAt\": \"2026-02-25T09:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T19:00:00.000Z\"\n  }\n}",
+                  "_postman_previewlanguage": "json"
+                },
+                {
+                  "name": "400 Bad Request — Already approved",
+                  "status": "Bad Request",
+                  "code": 400,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Doctor is already approved\"\n}",
+                  "_postman_previewlanguage": "json"
+                },
+                {
+                  "name": "404 Not Found",
+                  "status": "Not Found",
+                  "code": 404,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Doctor profile not found\"\n}",
+                  "_postman_previewlanguage": "json"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Appointments",
+          "item": [
+            {
+              "name": "List All Appointments",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/appointments?page=1&limit=10&status=pending",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "appointments"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "10" },
+                    {
+                      "key": "status",
+                      "value": "pending",
+                      "description": "Filter: pending | confirmed | cancelled | completed"
+                    }
+                  ]
+                },
+                "description": "Retrieve all appointments in the system with full doctor and patient details populated."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0f1\",\n      \"doctor\": {\n        \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n        \"user\": {\n          \"name\": \"Dr. Sara Mahmoud\",\n          \"email\": \"sara.doctor@example.com\"\n        }\n      },\n      \"patient\": {\n        \"_id\": \"64f1a2b3c4d5e6f7a8b9c0e1\",\n        \"user\": {\n          \"name\": \"Ahmed Hassan\",\n          \"email\": \"ahmed.patient@example.com\"\n        }\n      },\n      \"date\": \"2026-03-10T00:00:00.000Z\",\n      \"startTime\": \"10:00\",\n      \"endTime\": \"10:30\",\n      \"status\": \"pending\",\n      \"notes\": \"\",\n      \"createdAt\": \"2026-02-25T11:00:00.000Z\",\n      \"updatedAt\": \"2026-02-25T11:00:00.000Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 10,\n    \"totalPages\": 1,\n    \"hasNextPage\": false,\n    \"hasPrevPage\": false\n  }\n}",
+                  "_postman_previewlanguage": "json"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Specialties",
+          "item": [
+            {
+              "name": "Create Specialty",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Neurology\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/specialties",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "specialties"]
+                },
+                "description": "Create a new medical specialty. Name must be unique."
+              },
+              "response": [
+                {
+                  "name": "201 Created",
+                  "status": "Created",
+                  "code": 201,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0a4\",\n    \"name\": \"Neurology\",\n    \"createdAt\": \"2026-02-25T20:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T20:00:00.000Z\"\n  }\n}",
+                  "_postman_previewlanguage": "json"
+                },
+                {
+                  "name": "409 Conflict — Name already exists",
+                  "status": "Conflict",
+                  "code": 409,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"name already exists\"\n}",
+                  "_postman_previewlanguage": "json"
+                }
+              ]
+            },
+            {
+              "name": "List Specialties (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/specialties",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "specialties"]
+                },
+                "description": "List all specialties (admin view — same data as public endpoint but requires auth)."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0a1\",\n      \"name\": \"Cardiology\",\n      \"createdAt\": \"2026-02-25T08:00:00.000Z\",\n      \"updatedAt\": \"2026-02-25T08:00:00.000Z\"\n    },\n    {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0a4\",\n      \"name\": \"Neurology\",\n      \"createdAt\": \"2026-02-25T20:00:00.000Z\",\n      \"updatedAt\": \"2026-02-25T20:00:00.000Z\"\n    }\n  ]\n}",
+                  "_postman_previewlanguage": "json"
+                }
+              ]
+            },
+            {
+              "name": "Update Specialty",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Clinical Neurology\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/specialties/{{specialtyId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "specialties", "{{specialtyId}}"]
+                },
+                "description": "Update the name of an existing specialty."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0a4\",\n    \"name\": \"Clinical Neurology\",\n    \"createdAt\": \"2026-02-25T20:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T20:30:00.000Z\"\n  }\n}",
+                  "_postman_previewlanguage": "json"
+                },
+                {
+                  "name": "404 Not Found",
+                  "status": "Not Found",
+                  "code": 404,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Specialty not found\"\n}",
+                  "_postman_previewlanguage": "json"
+                }
+              ]
+            },
+            {
+              "name": "Delete Specialty",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/specialties/{{specialtyId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "specialties", "{{specialtyId}}"]
+                },
+                "description": "Permanently delete a specialty by ID."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Specialty deleted successfully\"\n}",
+                  "_postman_previewlanguage": "json"
+                },
+                {
+                  "name": "404 Not Found",
+                  "status": "Not Found",
+                  "code": 404,
+                  "header": [
+                    { "key": "Content-Type", "value": "application/json" }
+                  ],
+                  "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Specialty not found\"\n}",
+                  "_postman_previewlanguage": "json"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Common Error Responses",
+      "description": "Reference for error shapes returned across all endpoints.",
+      "item": [
+        {
+          "name": "401 — No Token / Expired Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/patients/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients", "profile"]
+            },
+            "description": "Example of what happens when no token or an expired/invalid token is sent to a protected endpoint."
+          },
+          "response": [
+            {
+              "name": "401 — No token provided",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"No token provided\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "401 — Token expired",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Token has expired\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "401 — Invalid token",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Invalid token\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "403 — Forbidden (wrong role)",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Access denied\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 — Route not found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Route not found\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "429 — Rate limit exceeded",
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Too many requests, please try again later.\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "500 — Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"status\": \"error\",\n  \"message\": \"Internal Server Error\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

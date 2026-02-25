@@ -1,4 +1,4 @@
-const User = require("../users/user.model");
+import User from "../users/user.model.js";
 
 class AuthRepository {
   async findByEmail(email, selectFields = "") {
@@ -26,4 +26,4 @@ class AuthRepository {
   }
 }
 
-module.exports = new AuthRepository();
+export default new AuthRepository();

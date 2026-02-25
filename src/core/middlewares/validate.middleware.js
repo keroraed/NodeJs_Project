@@ -1,4 +1,4 @@
-const ApiError = require("../errors/ApiError");
+import ApiError from "../errors/ApiError.js";
 
 /**
  * Joi validation middleware
@@ -38,4 +38,4 @@ const validate = (schema) => {
   };
 };
 
-module.exports = validate;
+export default validate;

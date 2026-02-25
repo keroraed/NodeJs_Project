@@ -1,4 +1,4 @@
-const adminService = require("./admin.service");
+import adminService from "./admin.service.js";
 
 class AdminController {
   /**
@@ -72,4 +72,4 @@ class AdminController {
   }
 }
 
-module.exports = new AdminController();
+export default new AdminController();

@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const { APPOINTMENT_STATUS } = require("../../core/config/constants");
+import mongoose from "mongoose";
+import { APPOINTMENT_STATUS } from "../../core/config/constants.js";
 
 const appointmentSchema = new mongoose.Schema(
   {
@@ -51,4 +51,4 @@ appointmentSchema.index({ patient: 1 });
 
 const Appointment = mongoose.model("Appointment", appointmentSchema);
 
-module.exports = Appointment;
+export default Appointment;

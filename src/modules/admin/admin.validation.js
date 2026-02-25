@@ -1,4 +1,4 @@
-const Joi = require("joi");
+import Joi from "joi";
 
 const objectIdSchema = {
   params: Joi.object({
@@ -31,8 +31,4 @@ const updateSpecialtySchema = {
   }),
 };
 
-module.exports = {
-  objectIdSchema,
-  createSpecialtySchema,
-  updateSpecialtySchema,
-};
+export { objectIdSchema, createSpecialtySchema, updateSpecialtySchema };
