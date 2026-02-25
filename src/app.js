@@ -3,7 +3,9 @@ import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
 import "express-async-errors";
+import swaggerUi from "swagger-ui-express";
 
+import swaggerDefinition from "./core/config/swagger.config.js";
 import routes from "./routes/index.js";
 import {
   errorHandler,
@@ -14,7 +16,33 @@ import logger from "./core/logger/logger.js";
 
 const app = express();
 
-// Security headers
+// ── Swagger UI (mounted before helmet so CSP does not block assets) ──────────
+app.use(
+  "/",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDefinition, {
+    customSiteTitle: "Medical Appointment API",
+    customCss: `
+      .swagger-ui .topbar { background-color: #1a6e3c; }
+      .swagger-ui .topbar .topbar-wrapper .link span { display: none; }
+      .swagger-ui .topbar .topbar-wrapper::before {
+        content: "🏥 Medical Appointment System";
+        color: #fff;
+        font-size: 1.1rem;
+        font-weight: 600;
+        padding-left: 8px;
+      }
+    `,
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      filter: true,
+      tryItOutEnabled: true,
+    },
+  }),
+);
+
+// Security headers (after swagger so the UI assets are not blocked)
 app.use(helmet());
 
 // CORS
