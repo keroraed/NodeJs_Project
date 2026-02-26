@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import mongoose from "mongoose";
 import authRepository from "./auth.repository.js";
 import ApiError from "../../core/errors/ApiError.js";
 import {
@@ -32,39 +31,24 @@ class AuthService {
     const otp = generateOtp();
     const hashedOtp = await hashValue(otp);
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    let user;
-    try {
-      user = await authRepository.create(
-        {
-          name: userData.name,
-          email: userData.email,
-          password: hashedPassword,
-          role: userData.role || ROLES.PATIENT,
-          phone: userData.phone,
-          dateOfBirth: userData.dateOfBirth,
-          gender: userData.gender,
-          address: userData.address,
-          otp: hashedOtp,
-          otpExpiry: addMinutes(new Date(), OTP_EXPIRY_MINUTES),
-        },
-        session,
-      );
+    const user = await authRepository.create({
+      name: userData.name,
+      email: userData.email,
+      password: hashedPassword,
+      role: userData.role || ROLES.PATIENT,
+      phone: userData.phone,
+      dateOfBirth: userData.dateOfBirth,
+      gender: userData.gender,
+      address: userData.address,
+      otp: hashedOtp,
+      otpExpiry: addMinutes(new Date(), OTP_EXPIRY_MINUTES),
+    });
 
-      // Auto-create profile based on role
-      if (user.role === ROLES.PATIENT) {
-        await Patient.create([{ user: user._id }], { session });
-      } else if (user.role === ROLES.DOCTOR) {
-        await DoctorProfile.create([{ user: user._id }], { session });
-      }
-
-      await session.commitTransaction();
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
+    // Auto-create profile based on role
+    if (user.role === ROLES.PATIENT) {
+      await Patient.create({ user: user._id });
+    } else if (user.role === ROLES.DOCTOR) {
+      await DoctorProfile.create({ user: user._id });
     }
 
     await sendOtpEmail(user.email, otp, user.name);
