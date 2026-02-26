@@ -706,7 +706,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/doctors?page=1&limit=10&specialty={{specialtyId}}",
+              "raw": "{{baseUrl}}/doctors?page=1&limit=10&specialty={{specialtyId}}&name=sara",
               "host": ["{{baseUrl}}"],
               "path": ["doctors"],
               "query": [
@@ -724,10 +724,15 @@
                   "key": "specialty",
                   "value": "{{specialtyId}}",
                   "description": "Filter by specialty ObjectId (optional)"
+                },
+                {
+                  "key": "name",
+                  "value": "sara",
+                  "description": "Search by doctor name — case-insensitive partial match (optional)"
                 }
               ]
             },
-            "description": "List all approved doctors available for booking. Optionally filter by specialty. If an admin token is provided, all doctors (including unapproved) are returned."
+            "description": "List all approved doctors available for booking. Supports filtering by specialty ID and partial name search. If an admin token is provided, all doctors (including unapproved) are returned."
           },
           "response": [
             {
@@ -861,6 +866,72 @@
                 { "key": "Content-Type", "value": "application/json" }
               ],
               "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n    \"user\": \"64f1a2b3c4d5e6f7a8b9c0d2\",\n    \"specialty\": \"64f1a2b3c4d5e6f7a8b9c0a1\",\n    \"bio\": \"Board-certified cardiologist with 10 years of experience at Cairo University Hospital.\",\n    \"isApproved\": true,\n    \"availability\": [\n      {\n        \"day\": \"Monday\",\n        \"slots\": [\n          { \"startTime\": \"09:00\", \"endTime\": \"13:00\" },\n          { \"startTime\": \"15:00\", \"endTime\": \"18:00\" }\n        ]\n      },\n      {\n        \"day\": \"Wednesday\",\n        \"slots\": [\n          { \"startTime\": \"10:00\", \"endTime\": \"14:00\" }\n        ]\n      },\n      {\n        \"day\": \"Saturday\",\n        \"slots\": [\n          { \"startTime\": \"09:00\", \"endTime\": \"12:00\" }\n        ]\n      }\n    ],\n    \"createdAt\": \"2026-02-25T09:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T16:00:00.000Z\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Upload Profile Picture",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "profilePicture",
+                  "type": "file",
+                  "src": "",
+                  "description": "Image file — JPEG, PNG, or WebP. Max size: 2 MB."
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/doctors/profile/picture",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors", "profile", "picture"]
+            },
+            "description": "Upload or replace the authenticated doctor's profile picture.\n\n**Request:** `multipart/form-data` with a single field named `profilePicture`.\n\n**Accepted formats:** JPEG, JPG, PNG, WebP\n\n**Max file size:** 2 MB\n\nThe returned `profilePicture` value is a relative path. Prefix with `http://localhost:5000` to display the image.\n\n**Note:** Do NOT set `Content-Type` manually — Postman sets it automatically for form-data."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Profile picture uploaded successfully\",\n  \"data\": {\n    \"profilePicture\": \"/uploads/profiles/1740000000000-123456789.jpg\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — No file provided",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"No image file provided\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — Invalid file type",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Invalid file type. Only JPEG, PNG, and WebP images are allowed.\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — File too large",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"File too large. Maximum size is 2 MB.\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"No token provided\"\n}",
               "_postman_previewlanguage": "json"
             }
           ]

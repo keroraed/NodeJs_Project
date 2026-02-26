@@ -3,6 +3,8 @@ import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
 import "express-async-errors";
+import { fileURLToPath } from "url";
+import path from "path";
 
 import routes from "./routes/index.js";
 import {
@@ -13,6 +15,11 @@ import { apiLimiter } from "./core/middlewares/rateLimit.middleware.js";
 import logger from "./core/logger/logger.js";
 
 const app = express();
+
+// Serve uploaded profile pictures
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Security headers
 app.use(helmet());

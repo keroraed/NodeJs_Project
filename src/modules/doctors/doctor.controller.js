@@ -18,6 +18,18 @@ class DoctorController {
   }
 
   /**
+   * PATCH /api/doctors/profile/picture
+   */
+  async uploadProfilePicture(req, res) {
+    const doctor = await doctorService.uploadProfilePicture(req.user._id, req.file);
+    res.status(200).json({
+      success: true,
+      message: "Profile picture uploaded successfully",
+      data: { profilePicture: doctor.profilePicture },
+    });
+  }
+
+  /**
    * GET /api/doctors/appointments
    */
   async getAppointments(req, res) {

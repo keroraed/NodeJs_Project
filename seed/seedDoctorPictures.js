@@ -1,0 +1,89 @@
+/**
+ * Seed script to assign profile pictures to all seeded doctors
+ * Uses randomuser.me portrait photos (no download needed — URLs stored directly)
+ * Run with: npm run seed:doctors:pictures
+ */
+import mongoose from "mongoose";
+import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+import User from "../src/modules/users/user.model.js";
+import DoctorProfile from "../src/modules/doctors/doctor.model.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
+// randomuser.me portrait URLs — free, stable, no auth needed
+// Format: https://randomuser.me/api/portraits/[men|women]/[1-99].jpg
+const DOCTOR_PICTURES = [
+  { email: "ahmed.kamal@clinic.com",    picture: "https://randomuser.me/api/portraits/men/32.jpg" },
+  { email: "sara.mahmoud@clinic.com",   picture: "https://randomuser.me/api/portraits/women/44.jpg" },
+  { email: "mohamed.hassan@clinic.com", picture: "https://randomuser.me/api/portraits/men/52.jpg" },
+  { email: "nour.ramzy@clinic.com",     picture: "https://randomuser.me/api/portraits/men/41.jpg" },
+  { email: "hana.salah@clinic.com",     picture: "https://randomuser.me/api/portraits/women/68.jpg" },
+  { email: "tarek.fouad@clinic.com",    picture: "https://randomuser.me/api/portraits/men/76.jpg" },
+  { email: "dina.mostafa@clinic.com",   picture: "https://randomuser.me/api/portraits/women/55.jpg" },
+  { email: "khaled.ibrahim@clinic.com", picture: "https://randomuser.me/api/portraits/men/28.jpg" },
+  { email: "rania.adel@clinic.com",     picture: "https://randomuser.me/api/portraits/women/33.jpg" },
+  { email: "sameh.wahba@clinic.com",    picture: "https://randomuser.me/api/portraits/men/64.jpg" },
+  { email: "eman.farouk@clinic.com",    picture: "https://randomuser.me/api/portraits/women/77.jpg" },
+  { email: "amr.sayed@clinic.com",      picture: "https://randomuser.me/api/portraits/men/18.jpg" },
+  { email: "mona.gamal@clinic.com",     picture: "https://randomuser.me/api/portraits/women/22.jpg" },
+  { email: "youssef.nabil@clinic.com",  picture: "https://randomuser.me/api/portraits/men/87.jpg" },
+  { email: "laila.hamdy@clinic.com",    picture: "https://randomuser.me/api/portraits/women/48.jpg" },
+  { email: "hesham.zaki@clinic.com",    picture: "https://randomuser.me/api/portraits/men/59.jpg" },
+  { email: "noha.sherif@clinic.com",    picture: "https://randomuser.me/api/portraits/women/36.jpg" },
+  { email: "bassem.naguib@clinic.com",  picture: "https://randomuser.me/api/portraits/men/73.jpg" },
+  { email: "abeer.lotfy@clinic.com",    picture: "https://randomuser.me/api/portraits/women/61.jpg" },
+  { email: "omar.fathy@clinic.com",     picture: "https://randomuser.me/api/portraits/men/45.jpg" },
+];
+
+const seedDoctorPictures = async () => {
+  try {
+    const mongoUri =
+      process.env.MONGODB_URI ||
+      "mongodb://localhost:27017/medical-appointment-system";
+
+    await mongoose.connect(mongoUri);
+    console.log("Connected to MongoDB\n");
+
+    let updated = 0;
+    let skipped = 0;
+
+    for (const { email, picture } of DOCTOR_PICTURES) {
+      const user = await User.findOne({ email });
+      if (!user) {
+        console.log(`  Skipped (user not found): ${email}`);
+        skipped++;
+        continue;
+      }
+
+      const result = await DoctorProfile.findOneAndUpdate(
+        { user: user._id },
+        { profilePicture: picture },
+        { new: true },
+      );
+
+      if (!result) {
+        console.log(`  Skipped (profile not found): ${email}`);
+        skipped++;
+        continue;
+      }
+
+      console.log(`  Updated: ${user.name}`);
+      updated++;
+    }
+
+    console.log(`\nDone! Updated: ${updated}, Skipped: ${skipped}`);
+    await mongoose.disconnect();
+    console.log("Disconnected from MongoDB");
+    process.exit(0);
+  } catch (error) {
+    console.error("Seed failed:", error.message);
+    await mongoose.disconnect();
+    process.exit(1);
+  }
+};
+
+seedDoctorPictures();

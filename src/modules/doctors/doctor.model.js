@@ -46,6 +46,10 @@ const doctorProfileSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    profilePicture: {
+      type: String,
+      default: "",
+    },
     isApproved: {
       type: Boolean,
       default: false,

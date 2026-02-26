@@ -12,6 +12,7 @@ import {
   updateAppointmentSchema,
   getDoctorByIdSchema,
 } from "./doctor.validation.js";
+import upload from "../../core/middlewares/upload.middleware.js";
 
 const router = Router();
 
@@ -29,6 +30,14 @@ router.put(
   authorize(ROLES.DOCTOR),
   validate(updateDoctorProfileSchema),
   doctorController.updateProfile,
+);
+
+router.patch(
+  "/profile/picture",
+  authenticate,
+  authorize(ROLES.DOCTOR),
+  upload.single("profilePicture"),
+  doctorController.uploadProfilePicture,
 );
 
 router.get(

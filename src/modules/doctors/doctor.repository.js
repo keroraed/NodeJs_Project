@@ -1,4 +1,5 @@
 import DoctorProfile from "./doctor.model.js";
+import User from "../users/user.model.js";
 
 class DoctorRepository {
   async create(data) {
@@ -27,8 +28,18 @@ class DoctorRepository {
       .populate("specialty", "name");
   }
 
-  async findAllApproved(filter = {}, skip = 0, limit = 10) {
-    const query = { isApproved: true, ...filter };
+  async _resolveNameFilter(name) {
+    if (!name) return {};
+    const matchingUsers = await User.find(
+      { name: { $regex: name, $options: "i" } },
+      "_id",
+    );
+    return { user: { $in: matchingUsers.map((u) => u._id) } };
+  }
+
+  async findAllApproved(filter = {}, skip = 0, limit = 10, name = "") {
+    const nameFilter = await this._resolveNameFilter(name);
+    const query = { isApproved: true, ...filter, ...nameFilter };
     const [doctors, total] = await Promise.all([
       DoctorProfile.find(query)
         .populate("user", "name email phone gender")
@@ -41,15 +52,17 @@ class DoctorRepository {
     return { doctors, total };
   }
 
-  async findAll(filter = {}, skip = 0, limit = 10) {
+  async findAll(filter = {}, skip = 0, limit = 10, name = "") {
+    const nameFilter = await this._resolveNameFilter(name);
+    const query = { ...filter, ...nameFilter };
     const [doctors, total] = await Promise.all([
-      DoctorProfile.find(filter)
+      DoctorProfile.find(query)
         .populate("user", "name email phone gender")
         .populate("specialty", "name")
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 }),
-      DoctorProfile.countDocuments(filter),
+      DoctorProfile.countDocuments(query),
     ]);
     return { doctors, total };
   }

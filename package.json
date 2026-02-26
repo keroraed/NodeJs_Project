@@ -7,7 +7,10 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "seed": "node seed/seedAdmin.js"
+    "seed": "node seed/seedAdmin.js",
+    "seed:specialties": "node seed/seedSpecialties.js",
+    "seed:doctors": "node seed/seedDoctors.js",
+    "seed:doctors:pictures": "node seed/seedDoctorPictures.js"
   },
   "keywords": [
     "medical",
@@ -29,6 +32,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.7.0",
     "morgan": "^1.10.0",
+    "multer": "^2.0.2",
     "nodemailer": "^6.9.15",
     "winston": "^3.14.2"
   },

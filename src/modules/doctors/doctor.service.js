@@ -93,6 +93,21 @@ class DoctorService {
   }
 
   /**
+   * PATCH /api/doctors/profile/picture — Upload profile picture
+   */
+  async uploadProfilePicture(userId, file) {
+    if (!file) {
+      throw ApiError.badRequest("No image file provided");
+    }
+    const doctor = await doctorRepository.findByUserId(userId);
+    if (!doctor) {
+      throw ApiError.notFound("Doctor profile not found");
+    }
+    const profilePicture = `/uploads/profiles/${file.filename}`;
+    return doctorRepository.updateByUserId(userId, { profilePicture });
+  }
+
+  /**
    * GET /api/doctors — List approved doctors (public)
    */
   async listApprovedDoctors(query) {
@@ -105,6 +120,7 @@ class DoctorService {
       filter,
       skip,
       limit,
+      query.name || "",
     );
     return paginatedResponse(doctors, total, page, limit);
   }
@@ -114,7 +130,12 @@ class DoctorService {
    */
   async listAllDoctors(query) {
     const { page, limit, skip } = getPagination(query);
-    const { doctors, total } = await doctorRepository.findAll({}, skip, limit);
+    const { doctors, total } = await doctorRepository.findAll(
+      {},
+      skip,
+      limit,
+      query.name || "",
+    );
     return paginatedResponse(doctors, total, page, limit);
   }
 
