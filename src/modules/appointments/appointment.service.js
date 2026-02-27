@@ -1,114 +1,1 @@
-import appointmentRepository from "./appointment.repository.js";
-import doctorRepository from "../doctors/doctor.repository.js";
-import patientRepository from "../patients/patient.repository.js";
-import ApiError from "../../core/errors/ApiError.js";
-import { sendEmail } from "../../core/utils/sendEmail.util.js";
-import logger from "../../core/logger/logger.js";
-
-class AppointmentService {
-  /**
-   * POST /api/appointments — Patient books an appointment
-   * Checks for double-booking, creates with status 'pending', sends email
-   */
-  async bookAppointment(userId, data) {
-    // Get patient profile
-    const patient = await patientRepository.findByUserId(userId);
-    if (!patient) {
-      throw ApiError.notFound("Patient profile not found");
-    }
-
-    // Get doctor profile
-    const doctor = await doctorRepository.findById(data.doctor);
-    if (!doctor) {
-      throw ApiError.notFound("Doctor not found");
-    }
-
-    if (!doctor.isApproved) {
-      throw ApiError.badRequest("Doctor is not approved yet");
-    }
-
-    // Normalize date to start of day for consistent storage
-    const appointmentDate = new Date(data.date);
-    appointmentDate.setHours(0, 0, 0, 0);
-
-    // Validate against doctor's availability schedule
-    if (doctor.availability && doctor.availability.length > 0) {
-      const dayNames = [
-        "Sunday",
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-      ];
-      const appointmentDay = dayNames[appointmentDate.getDay()];
-      const dayAvailability = doctor.availability.find(
-        (a) => a.day === appointmentDay,
-      );
-      if (!dayAvailability) {
-        throw ApiError.badRequest("Doctor is not available on this day");
-      }
-      const isWithinSlot = dayAvailability.slots.some(
-        (slot) =>
-          data.startTime >= slot.startTime && data.endTime <= slot.endTime,
-      );
-      if (!isWithinSlot) {
-        throw ApiError.badRequest(
-          "Requested time is not within doctor's available slots",
-        );
-      }
-    }
-
-    // Check for double booking
-    const conflict = await appointmentRepository.findConflict(
-      doctor._id,
-      appointmentDate,
-      data.startTime,
-      data.endTime,
-    );
-    if (conflict) {
-      throw ApiError.conflict("This time slot is already booked");
-    }
-
-    // Create appointment with status pending
-    const appointment = await appointmentRepository.create({
-      doctor: doctor._id,
-      patient: patient._id,
-      date: appointmentDate,
-      startTime: data.startTime,
-      endTime: data.endTime,
-    });
-
-    // Send confirmation email to patient
-    try {
-      await sendEmail({
-        to: patient.user.email,
-        subject: "Appointment Booked - Medical Appointment System",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #2c3e50;">Appointment Confirmation</h2>
-            <p>Hello <strong>${patient.user.name}</strong>,</p>
-            <p>Your appointment has been booked successfully.</p>
-            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>Date:</strong> ${appointmentDate.toLocaleDateString()}</p>
-              <p><strong>Time:</strong> ${data.startTime} - ${data.endTime}</p>
-              <p><strong>Status:</strong> Pending</p>
-            </div>
-            <p>You will be notified once the doctor confirms your appointment.</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-            <p style="color: #999; font-size: 12px;">Medical Appointment System</p>
-          </div>
-        `,
-      });
-    } catch (error) {
-      logger.warn(
-        `Failed to send appointment confirmation email: ${error.message}`,
-      );
-    }
-
-    return await appointmentRepository.findById(appointment._id);
-  }
-}
-
-export default new AppointmentService();
+import appointmentRepository from "./appointment.repository.js";import doctorRepository from "../doctors/doctor.repository.js";import patientRepository from "../patients/patient.repository.js";import ApiError from "../../core/errors/ApiError.js";import { sendEmail } from "../../core/utils/sendEmail.util.js";import logger from "../../core/logger/logger.js";const DAY_NAMES = [  "Sunday",  "Monday",  "Tuesday",  "Wednesday",  "Thursday",  "Friday",  "Saturday",];function generateTimeSlots(startTime, endTime, duration) {  const slots = [];  const [sh, sm] = startTime.split(":").map(Number);  const [eh, em] = endTime.split(":").map(Number);  let current = sh * 60 + sm;  const end = eh * 60 + em;  while (current + duration <= end) {    const slotStart = `${String(Math.floor(current / 60)).padStart(2, "0")}:${String(current % 60).padStart(2, "0")}`;    const slotEnd = `${String(Math.floor((current + duration) / 60)).padStart(2, "0")}:${String((current + duration) % 60).padStart(2, "0")}`;    slots.push({ startTime: slotStart, endTime: slotEnd });    current += duration;  }  return slots;}function addMinutes(time, minutes) {  const [h, m] = time.split(":").map(Number);  const total = h * 60 + m + minutes;  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;}class AppointmentService {  async getAvailableSlots(doctorId, dateStr) {    const doctor = await doctorRepository.findById(doctorId);    if (!doctor) throw ApiError.notFound("Doctor not found");    if (!doctor.isApproved)      throw ApiError.badRequest("Doctor is not approved yet");    const date = new Date(dateStr);    date.setHours(0, 0, 0, 0);    const dayName = DAY_NAMES[date.getDay()];    const dayAvailability = doctor.availability      ? doctor.availability.find((a) => a.day === dayName)      : null;    if (!dayAvailability || !dayAvailability.slots.length) {      return {        date: dateStr,        day: dayName,        slotDuration: doctor.slotDuration || 30,        totalSlots: 0,        availableCount: 0,        slots: [],      };    }    const slotDuration = doctor.slotDuration || 30;    const allSlots = [];    for (const window of dayAvailability.slots) {      allSlots.push(...generateTimeSlots(window.startTime, window.endTime, slotDuration));    }    const booked = await appointmentRepository.getBookedSlots(doctor._id, date);    const bookedStartTimes = new Set(booked.map((b) => b.startTime));    const slots = allSlots.map((slot) => ({      startTime: slot.startTime,      endTime: slot.endTime,      available: !bookedStartTimes.has(slot.startTime),    }));    return {      date: dateStr,      day: dayName,      slotDuration,      totalSlots: slots.length,      availableCount: slots.filter((s) => s.available).length,      slots,    };  }  async bookAppointment(userId, data) {    const patient = await patientRepository.findByUserId(userId);    if (!patient) {      throw ApiError.notFound("Patient profile not found");    }    const doctor = await doctorRepository.findById(data.doctor);    if (!doctor) {      throw ApiError.notFound("Doctor not found");    }    if (!doctor.isApproved) {      throw ApiError.badRequest("Doctor is not approved yet");    }    const appointmentDate = new Date(data.date);    appointmentDate.setHours(0, 0, 0, 0);    const slotDuration = doctor.slotDuration || 30;    const endTime = addMinutes(data.startTime, slotDuration);    if (doctor.availability && doctor.availability.length > 0) {      const appointmentDay = DAY_NAMES[appointmentDate.getDay()];      const dayAvailability = doctor.availability.find(        (a) => a.day === appointmentDay,      );      if (!dayAvailability) {        throw ApiError.badRequest("Doctor is not available on this day");      }      const isWithinSlot = dayAvailability.slots.some(        (slot) =>          data.startTime >= slot.startTime && endTime <= slot.endTime,      );      if (!isWithinSlot) {        throw ApiError.badRequest(          "Selected time slot is not within the doctor's available hours",        );      }    }    const conflict = await appointmentRepository.findConflict(      doctor._id,      appointmentDate,      data.startTime,      endTime,    );    if (conflict) {      throw ApiError.conflict(        "This time slot is already booked. Please choose another slot.",      );    }    const appointment = await appointmentRepository.create({      doctor: doctor._id,      patient: patient._id,      date: appointmentDate,      startTime: data.startTime,      endTime,      notes: data.notes || "",    });    try {      await sendEmail({        to: patient.user.email,        subject: "Appointment Booked - Medical Appointment System",        html: `          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">            <h2 style="color: #2c3e50;">Appointment Confirmation</h2>            <p>Hello <strong>${patient.user.name}</strong>,</p>            <p>Your appointment has been booked successfully.</p>            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">              <p><strong>Date:</strong> ${appointmentDate.toLocaleDateString()}</p>              <p><strong>Time:</strong> ${data.startTime} - ${endTime}</p>              <p><strong>Status:</strong> Pending</p>            </div>            <p>You will be notified once the doctor confirms your appointment.</p>            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">            <p style="color: #999; font-size: 12px;">Medical Appointment System</p>          </div>        `,      });    } catch (error) {      logger.warn(        `Failed to send appointment confirmation email: ${error.message}`,      );    }    return await appointmentRepository.findById(appointment._id);  }}export default new AppointmentService();

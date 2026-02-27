@@ -1,24 +1,1 @@
-import ApiError from "../errors/ApiError.js";
-
-/**
- * Role-based authorization middleware
- * @param  {...string} allowedRoles - Roles that are allowed to access the route
- * @returns {Function} Express middleware
- */
-const authorize = (...allowedRoles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return next(ApiError.unauthorized("Authentication required"));
-    }
-
-    if (!allowedRoles.includes(req.user.role)) {
-      return next(
-        ApiError.forbidden("You do not have permission to perform this action"),
-      );
-    }
-
-    next();
-  };
-};
-
-export default authorize;
+import ApiError from "../errors/ApiError.js";const authorize = (...allowedRoles) => {  return (req, res, next) => {    if (!req.user) {      return next(ApiError.unauthorized("Authentication required"));    }    if (!allowedRoles.includes(req.user.role)) {      return next(        ApiError.forbidden("You do not have permission to perform this action"),      );    }    next();  };};export default authorize;

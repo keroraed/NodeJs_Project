@@ -1,33 +1,1 @@
-import Specialty from "./specialty.model.js";
-
-class SpecialtyRepository {
-  async create(data) {
-    const specialty = new Specialty(data);
-    return specialty.save();
-  }
-
-  async findById(id) {
-    return Specialty.findById(id);
-  }
-
-  async findByName(name) {
-    return Specialty.findOne({ name }).collation({ locale: "en", strength: 2 });
-  }
-
-  async findAll() {
-    return Specialty.find().sort({ name: 1 });
-  }
-
-  async updateById(id, data) {
-    return Specialty.findByIdAndUpdate(id, data, {
-      new: true,
-      runValidators: true,
-    });
-  }
-
-  async deleteById(id) {
-    return Specialty.findByIdAndDelete(id);
-  }
-}
-
-export default new SpecialtyRepository();
+import Specialty from "./specialty.model.js";class SpecialtyRepository {  async create(data) {    const specialty = new Specialty(data);    return specialty.save();  }  async findById(id) {    return Specialty.findById(id);  }  async findByName(name) {    return Specialty.findOne({ name }).collation({ locale: "en", strength: 2 });  }  async findAll() {    return Specialty.find().sort({ name: 1 });  }  async updateById(id, data) {    return Specialty.findByIdAndUpdate(id, data, {      new: true,      runValidators: true,    });  }  async deleteById(id) {    return Specialty.findByIdAndDelete(id);  }}export default new SpecialtyRepository();

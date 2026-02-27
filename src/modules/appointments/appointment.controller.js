@@ -1,16 +1,1 @@
-import appointmentService from "./appointment.service.js";
-
-class AppointmentController {
-  /**
-   * POST /api/appointments — Book an appointment
-   */
-  async bookAppointment(req, res) {
-    const appointment = await appointmentService.bookAppointment(
-      req.user._id,
-      req.body,
-    );
-    res.status(201).json({ success: true, data: appointment });
-  }
-}
-
-export default new AppointmentController();
+import appointmentService from "./appointment.service.js";class AppointmentController {  async getAvailableSlots(req, res) {    const { doctorId, date } = req.query;    const result = await appointmentService.getAvailableSlots(doctorId, date);    res.status(200).json({ success: true, data: result });  }  async bookAppointment(req, res) {    const appointment = await appointmentService.bookAppointment(      req.user._id,      req.body,    );    res.status(201).json({ success: true, data: appointment });  }}export default new AppointmentController();

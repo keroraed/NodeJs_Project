@@ -1014,8 +1014,59 @@
     },
     {
       "name": "Appointments",
-      "description": "Book a new appointment. Patients only.",
+      "description": "Appointment booking and slot management. Patients only for booking.",
       "item": [
+        {
+          "name": "Get Available Slots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/slots?doctorId={{doctorProfileId}}&date=2026-03-10",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "slots"],
+              "query": [
+                {
+                  "key": "doctorId",
+                  "value": "{{doctorProfileId}}",
+                  "description": "DoctorProfile _id"
+                },
+                {
+                  "key": "date",
+                  "value": "2026-03-10",
+                  "description": "Date in YYYY-MM-DD format"
+                }
+              ]
+            },
+            "description": "Returns all time slots for a doctor on a specific date, each marked as `available: true/false`.\n\n**How to use:**\n1. Call this endpoint first to see which slots are free.\n2. Pick a slot with `available: true`.\n3. Use its `startTime` in **POST /appointments** — `endTime` is auto-calculated on the server.\n\n**Query params:**\n- `doctorId` — DoctorProfile `_id`\n- `date` — `YYYY-MM-DD` format\n\n**Slot duration** is set per doctor (`slotDuration` field, default 30 minutes)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"date\": \"2026-03-10\",\n    \"day\": \"Tuesday\",\n    \"slotDuration\": 30,\n    \"totalSlots\": 8,\n    \"availableCount\": 7,\n    \"slots\": [\n      { \"startTime\": \"09:00\", \"endTime\": \"09:30\", \"available\": true },\n      { \"startTime\": \"09:30\", \"endTime\": \"10:00\", \"available\": false },\n      { \"startTime\": \"10:00\", \"endTime\": \"10:30\", \"available\": true },\n      { \"startTime\": \"10:30\", \"endTime\": \"11:00\", \"available\": true },\n      { \"startTime\": \"11:00\", \"endTime\": \"11:30\", \"available\": true },\n      { \"startTime\": \"11:30\", \"endTime\": \"12:00\", \"available\": true },\n      { \"startTime\": \"12:00\", \"endTime\": \"12:30\", \"available\": true },\n      { \"startTime\": \"12:30\", \"endTime\": \"13:00\", \"available\": true }\n    ]\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — Invalid date format",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Date must be in YYYY-MM-DD format\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 Not Found — Doctor not found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Doctor not found\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
         {
           "name": "Book Appointment",
           "request": {
@@ -1023,7 +1074,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"doctor\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n  \"date\": \"2026-03-10\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"10:30\"\n}",
+              "raw": "{\n  \"doctor\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n  \"date\": \"2026-03-10\",\n  \"startTime\": \"10:00\",\n  \"notes\": \"First visit for skin checkup\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -1031,26 +1082,22 @@
               "host": ["{{baseUrl}}"],
               "path": ["appointments"]
             },
-            "description": "Book an appointment with an approved doctor.\n\n**Rules:**\n- `doctor` must be a valid DoctorProfile `_id` of an **approved** doctor.\n- `date` must be a future date.\n- `startTime` / `endTime` must match `HH:mm` 24-hour format.\n- The time slot must fall within the doctor's availability schedule for that weekday.\n- No double booking — the slot must not already be taken.\n- A confirmation email is sent to both patient and doctor."
+            "description": "Book a specific time slot with an approved doctor.\n\n**Important change:** `endTime` is no longer accepted — the server automatically calculates it from the doctor's `slotDuration` (default 30 min).\n\n**Workflow:**\n1. Call `GET /appointments/slots?doctorId=...&date=...` to see available slots.\n2. Pick a slot with `available: true`.\n3. POST here with just `startTime` — the server computes `endTime`.\n\n**Rules:**\n- `doctor` must be a valid approved DoctorProfile `_id`.\n- `date` must be a future date.\n- `startTime` in `HH:mm` 24-hour format must fall within doctor's availability window.\n- No double booking — slot must not already be taken.\n- A confirmation email is sent to the patient."
           },
           "response": [
             {
               "name": "201 Created",
               "status": "Created",
               "code": 201,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
-              "body": "{\n  \"success\": true,\n  \"message\": \"Appointment booked successfully\",\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0f1\",\n    \"doctor\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n    \"patient\": \"64f1a2b3c4d5e6f7a8b9c0e1\",\n    \"date\": \"2026-03-10T00:00:00.000Z\",\n    \"startTime\": \"10:00\",\n    \"endTime\": \"10:30\",\n    \"status\": \"pending\",\n    \"notes\": \"\",\n    \"createdAt\": \"2026-02-25T11:00:00.000Z\",\n    \"updatedAt\": \"2026-02-25T11:00:00.000Z\"\n  }\n}",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0f1\",\n    \"doctor\": {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d3\",\n      \"user\": { \"name\": \"Dr. Kerolos Raed\", \"email\": \"kerolos@example.com\" },\n      \"specialty\": { \"name\": \"Dermatology\" }\n    },\n    \"patient\": {\n      \"_id\": \"64f1a2b3c4d5e6f7a8b9c0e1\",\n      \"user\": { \"name\": \"John Doe\", \"email\": \"john@example.com\" }\n    },\n    \"date\": \"2026-03-10T00:00:00.000Z\",\n    \"startTime\": \"10:00\",\n    \"endTime\": \"10:30\",\n    \"status\": \"pending\",\n    \"notes\": \"First visit for skin checkup\",\n    \"createdAt\": \"2026-02-26T11:00:00.000Z\",\n    \"updatedAt\": \"2026-02-26T11:00:00.000Z\"\n  }\n}",
               "_postman_previewlanguage": "json"
             },
             {
               "name": "400 Bad Request — Doctor not approved",
               "status": "Bad Request",
               "code": 400,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Doctor is not approved yet\"\n}",
               "_postman_previewlanguage": "json"
             },
@@ -1058,9 +1105,7 @@
               "name": "400 Bad Request — Doctor not available on this day",
               "status": "Bad Request",
               "code": 400,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Doctor is not available on this day\"\n}",
               "_postman_previewlanguage": "json"
             },
@@ -1068,29 +1113,23 @@
               "name": "400 Bad Request — Outside available slot",
               "status": "Bad Request",
               "code": 400,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
-              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Requested time is not within doctor's available slots\"\n}",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Selected time slot is not within the doctor's available hours\"\n}",
               "_postman_previewlanguage": "json"
             },
             {
               "name": "409 Conflict — Slot already booked",
               "status": "Conflict",
               "code": 409,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
-              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"This time slot is already booked\"\n}",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"This time slot is already booked. Please choose another slot.\"\n}",
               "_postman_previewlanguage": "json"
             },
             {
               "name": "404 Not Found — Doctor not found",
               "status": "Not Found",
               "code": 404,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Doctor not found\"\n}",
               "_postman_previewlanguage": "json"
             }

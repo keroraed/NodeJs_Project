@@ -1,62 +1,1 @@
-import { Router } from "express";
-import authController from "./auth.controller.js";
-import validate from "../../core/middlewares/validate.middleware.js";
-import { authLimiter } from "../../core/middlewares/rateLimit.middleware.js";
-import {
-  registerSchema,
-  loginSchema,
-  verifyEmailSchema,
-  forgotPasswordSchema,
-  verifyOtpSchema,
-  resetPasswordSchema,
-  resendOtpSchema,
-} from "./auth.validation.js";
-
-const router = Router();
-
-// All auth routes are public (with rate limiting)
-router.post(
-  "/register",
-  authLimiter,
-  validate(registerSchema),
-  authController.register,
-);
-
-router.post(
-  "/verify-email",
-  authLimiter,
-  validate(verifyEmailSchema),
-  authController.verifyEmail,
-);
-
-router.post(
-  "/resend-otp",
-  authLimiter,
-  validate(resendOtpSchema),
-  authController.resendOtp,
-);
-
-router.post("/login", authLimiter, validate(loginSchema), authController.login);
-
-router.post(
-  "/forgot-password",
-  authLimiter,
-  validate(forgotPasswordSchema),
-  authController.forgotPassword,
-);
-
-router.post(
-  "/verify-otp",
-  authLimiter,
-  validate(verifyOtpSchema),
-  authController.verifyOtp,
-);
-
-router.post(
-  "/reset-password",
-  authLimiter,
-  validate(resetPasswordSchema),
-  authController.resetPassword,
-);
-
-export default router;
+import { Router } from "express";import authController from "./auth.controller.js";import validate from "../../core/middlewares/validate.middleware.js";import { authLimiter } from "../../core/middlewares/rateLimit.middleware.js";import {  registerSchema,  loginSchema,  verifyEmailSchema,  forgotPasswordSchema,  verifyOtpSchema,  resetPasswordSchema,  resendOtpSchema,} from "./auth.validation.js";const router = Router();router.post(  "/register",  authLimiter,  validate(registerSchema),  authController.register,);router.post(  "/verify-email",  authLimiter,  validate(verifyEmailSchema),  authController.verifyEmail,);router.post(  "/resend-otp",  authLimiter,  validate(resendOtpSchema),  authController.resendOtp,);router.post("/login", authLimiter, validate(loginSchema), authController.login);router.post(  "/forgot-password",  authLimiter,  validate(forgotPasswordSchema),  authController.forgotPassword,);router.post(  "/verify-otp",  authLimiter,  validate(verifyOtpSchema),  authController.verifyOtp,);router.post(  "/reset-password",  authLimiter,  validate(resetPasswordSchema),  authController.resetPassword,);export default router;

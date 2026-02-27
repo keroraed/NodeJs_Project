@@ -2,27 +2,15 @@ import nodemailer from "nodemailer";
 import appConfig from "../config/app.config.js";
 import { OTP_EXPIRY_MINUTES } from "../config/constants.js";
 import logger from "../logger/logger.js";
-
-// Create reusable transporter
 const transporter = nodemailer.createTransport({
   host: appConfig.email.smtpServer,
   port: appConfig.email.smtpPort,
-  secure: false, // true for 465, false for other ports
+  secure: false, 
   auth: {
     user: appConfig.email.username,
     pass: appConfig.email.password,
   },
 });
-
-/**
- * Send an email
- * @param {Object} options
- * @param {string} options.to - Recipient email
- * @param {string} options.subject - Email subject
- * @param {string} options.html - Email HTML body
- * @param {string} [options.text] - Plain text fallback
- * @returns {Promise<Object>} Nodemailer info
- */
 const sendEmail = async ({ to, subject, html, text }) => {
   try {
     const mailOptions = {
@@ -32,7 +20,6 @@ const sendEmail = async ({ to, subject, html, text }) => {
       html,
       text: text || "",
     };
-
     const info = await transporter.sendMail(mailOptions);
     logger.info(`Email sent to ${to}: ${info.messageId}`);
     return info;
@@ -41,13 +28,6 @@ const sendEmail = async ({ to, subject, html, text }) => {
     throw error;
   }
 };
-
-/**
- * Send OTP verification email
- * @param {string} to - Recipient email
- * @param {string} otp - OTP code
- * @param {string} name - User's name
- */
 const sendOtpEmail = async (to, otp, name) => {
   const otpTemplate = `
   <!DOCTYPE html>
@@ -78,7 +58,6 @@ const sendOtpEmail = async (to, otp, name) => {
                 <p style="margin:0 0 24px;color:#64748b;font-size:15px;line-height:1.7;">
                   Use the one-time passcode below to securely verify your MedAppoint account.
                 </p>
-
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td align="center" style="background-color:#eff6ff;border:1px solid #e2e8f0;border-radius:12px;padding:20px 32px;">
@@ -86,7 +65,6 @@ const sendOtpEmail = async (to, otp, name) => {
                     </td>
                   </tr>
                 </table>
-
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td align="center" style="padding-top:14px;">
@@ -94,7 +72,6 @@ const sendOtpEmail = async (to, otp, name) => {
                     </td>
                   </tr>
                 </table>
-
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px;">
                   <tr>
                     <td style="background-color:#ecfeff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;">
@@ -120,23 +97,15 @@ const sendOtpEmail = async (to, otp, name) => {
   </body>
   </html>
   `;
-
   const html = otpTemplate
     .replace("{{OTP_CODE}}", otp)
     .replace("{{EXPIRY_MINUTES}}", String(OTP_EXPIRY_MINUTES));
-
   return sendEmail({
     to,
     subject: "Email Verification - MedAppoint",
     html,
   });
 };
-/**
- * Send password reset email
- * @param {string} to - Recipient email
- * @param {string} otp - OTP code
- * @param {string} name - User's name
- */
 const sendPasswordResetEmail = async (to, otp, name) => {
   const passwordResetTemplate = `
   <!DOCTYPE html>
@@ -167,7 +136,6 @@ const sendPasswordResetEmail = async (to, otp, name) => {
                 <p style="margin:0 0 24px;color:#64748b;font-size:15px;line-height:1.7;">
                   We received a request to reset your password. Use the one-time code below to continue.
                 </p>
-
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td align="center" style="background-color:#eff6ff;border:1px solid #e2e8f0;border-radius:12px;padding:20px 32px;">
@@ -175,7 +143,6 @@ const sendPasswordResetEmail = async (to, otp, name) => {
                     </td>
                   </tr>
                 </table>
-
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td align="center" style="padding-top:14px;">
@@ -183,7 +150,6 @@ const sendPasswordResetEmail = async (to, otp, name) => {
                     </td>
                   </tr>
                 </table>
-
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px;">
                   <tr>
                     <td style="background-color:#ecfeff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;">
@@ -193,7 +159,6 @@ const sendPasswordResetEmail = async (to, otp, name) => {
                     </td>
                   </tr>
                 </table>
-
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;">
                   <tr>
                     <td align="center" style="padding-top:4px;">
@@ -217,11 +182,9 @@ const sendPasswordResetEmail = async (to, otp, name) => {
   </body>
   </html>
   `;
-
   const html = passwordResetTemplate
     .replace("{{OTP_CODE}}", otp)
     .replace("{{EXPIRY_MINUTES}}", String(OTP_EXPIRY_MINUTES));
-
   return sendEmail({
     to,
     subject: "Password Reset - MedAppoint",
