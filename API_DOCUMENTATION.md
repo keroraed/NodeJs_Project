@@ -59,6 +59,14 @@ Authorization: Bearer <token>
    - [List Specialties (Admin)](#76-list-specialties-admin)
    - [Update Specialty](#77-update-specialty)
    - [Delete Specialty](#78-delete-specialty)
+8. [Chat (REST + WebSocket)](#8-chat-rest--websocket)
+   - [Start Conversation](#81-start-conversation)
+   - [List Conversations](#82-list-conversations)
+   - [Send Message](#83-send-message)
+   - [Get Messages](#84-get-messages)
+   - [Mark as Read](#85-mark-as-read)
+   - [Get Unread Count](#86-get-unread-count)
+   - [WebSocket Events](#87-websocket-events)
 
 ---
 
@@ -986,3 +994,168 @@ All errors follow this format:
 | 409         | Conflict — duplicate resource         |
 | 429         | Too Many Requests — rate limit hit    |
 | 500         | Internal Server Error                 |
+
+---
+
+## 8. Chat (REST + WebSocket)
+
+All REST chat endpoints require authentication (`Bearer` token) and the user must have role **doctor** or **patient**.
+
+### 8.1 Start Conversation
+
+Create or retrieve an existing conversation between a doctor and a patient.
+
+- **POST** `/api/chat/conversations`
+- **Auth:** Required (doctor or patient)
+
+**Body:**
+
+| Field           | Type   | Required | Description                                     |
+|-----------------|--------|----------|-------------------------------------------------|
+| targetProfileId | string | Yes      | DoctorProfile `_id` (if patient) or Patient `_id` (if doctor) |
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "conversationId",
+    "doctor": { "_id": "...", "user": { "name": "Dr. Smith", "email": "..." }, "specialty": { "name": "Cardiology" } },
+    "patient": { "_id": "...", "user": { "name": "John", "email": "..." } },
+    "lastMessage": null,
+    "lastMessageAt": "2026-03-01T...",
+    "createdAt": "...",
+    "updatedAt": "..."
+  }
+}
+```
+
+### 8.2 List Conversations
+
+Get all conversations for the authenticated user, sorted by most-recent message.
+
+- **GET** `/api/chat/conversations?page=1&limit=10`
+- **Auth:** Required (doctor or patient)
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": [ { "...conversation objects..." } ],
+  "pagination": { "total": 5, "page": 1, "limit": 10, "totalPages": 1, "hasNextPage": false, "hasPrevPage": false }
+}
+```
+
+### 8.3 Send Message
+
+Send a message in an existing conversation (REST fallback — prefer WebSocket for real-time).
+
+- **POST** `/api/chat/conversations/:conversationId/messages`
+- **Auth:** Required (doctor or patient, must be participant)
+
+**Body:**
+
+| Field   | Type   | Required | Description              |
+|---------|--------|----------|--------------------------|
+| content | string | Yes      | Message text (max 2000)  |
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "messageId",
+    "conversation": "conversationId",
+    "sender": { "_id": "...", "name": "...", "email": "...", "role": "doctor" },
+    "senderRole": "doctor",
+    "content": "Hello, how are you feeling?",
+    "isRead": false,
+    "createdAt": "...",
+    "updatedAt": "..."
+  }
+}
+```
+
+### 8.4 Get Messages
+
+Retrieve paginated messages for a conversation (newest-last order).
+
+- **GET** `/api/chat/conversations/:conversationId/messages?page=1&limit=50`
+- **Auth:** Required (participant only)
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": [ { "...message objects..." } ],
+  "pagination": { "total": 42, "page": 1, "limit": 50, "totalPages": 1, "hasNextPage": false, "hasPrevPage": false }
+}
+```
+
+### 8.5 Mark as Read
+
+Mark all unread messages from the other participant as read.
+
+- **PATCH** `/api/chat/conversations/:conversationId/read`
+- **Auth:** Required (participant only)
+
+**Response (200):**
+
+```json
+{ "success": true, "message": "Messages marked as read" }
+```
+
+### 8.6 Get Unread Count
+
+Get total unread message count across all conversations.
+
+- **GET** `/api/chat/unread-count`
+- **Auth:** Required (doctor or patient)
+
+**Response (200):**
+
+```json
+{ "success": true, "data": { "unreadCount": 3 } }
+```
+
+### 8.7 WebSocket Events
+
+Connect via Socket.IO on the **same port** as the HTTP server.
+
+**Connection:**
+
+```js
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:5000", {
+  auth: { token: "<JWT_TOKEN>" }
+});
+```
+
+#### Client → Server Events
+
+| Event                | Payload                                   | Callback                        | Description                        |
+|----------------------|-------------------------------------------|---------------------------------|------------------------------------|
+| `conversation:join`  | `conversationId` (string)                 | —                               | Join a conversation room           |
+| `conversation:leave` | `conversationId` (string)                 | —                               | Leave a conversation room          |
+| `message:send`       | `{ conversationId, content }`             | `{ success, message }` or `{ error }` | Send a message in real-time  |
+| `typing:start`       | `{ conversationId }`                      | —                               | Notify others you are typing       |
+| `typing:stop`        | `{ conversationId }`                      | —                               | Notify others you stopped typing   |
+| `messages:read`      | `{ conversationId }`                      | `{ success }` or `{ error }`   | Mark messages as read              |
+| `user:checkOnline`   | `targetUserId` (string)                   | `{ online: true/false }`       | Check if a user is online          |
+
+#### Server → Client Events
+
+| Event              | Payload                                                    | Description                                 |
+|--------------------|------------------------------------------------------------|---------------------------------------------|
+| `message:received` | `{ message, conversationId }`                              | New message in a joined conversation room   |
+| `message:new`      | `{ conversationId, message }`                              | New message notification (personal room)    |
+| `typing:start`     | `{ userId, name, conversationId }`                         | Someone started typing                      |
+| `typing:stop`      | `{ userId, conversationId }`                               | Someone stopped typing                      |
+| `messages:read`    | `{ conversationId, readBy }`                               | Messages were read by the other party       |
+| `user:online`      | `{ userId }`                                               | A user came online                          |
+| `user:offline`     | `{ userId }`                                               | A user went offline                         |

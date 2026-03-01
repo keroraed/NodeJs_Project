@@ -40,6 +40,12 @@
       "value": "",
       "type": "string",
       "description": "Specialty _id"
+    },
+    {
+      "key": "conversationId",
+      "value": "",
+      "type": "string",
+      "description": "Conversation _id — set from Start or Get Conversation response"
     }
   ],
   "auth": {
@@ -1592,6 +1598,299 @@
                 { "key": "Content-Type", "value": "application/json" }
               ],
               "body": "{\n  \"success\": false,\n  \"status\": \"error\",\n  \"message\": \"Internal Server Error\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "description": "Real-time messaging between doctors and patients. All endpoints require a Bearer token with role `doctor` or `patient`.",
+      "item": [
+        {
+          "name": "Start or Get Conversation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chat/conversations",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "conversations"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetProfileId\": \"{{doctorProfileId}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Creates a new conversation between the authenticated user and the target profile, or returns an existing one.\n\n**Body:**\n- `targetProfileId` *(string, required)* — MongoDB ObjectId of the other participant's profile"
+          },
+          "response": [
+            {
+              "name": "200 OK — Conversation returned",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d1\",\n    \"participants\": [\n      { \"profileId\": \"64f1a2b3c4d5e6f7a8b9c0d2\", \"role\": \"patient\", \"deletedAt\": null },\n      { \"profileId\": \"64f1a2b3c4d5e6f7a8b9c0d3\", \"role\": \"doctor\", \"deletedAt\": null }\n    ],\n    \"lastMessage\": null,\n    \"createdAt\": \"2026-03-01T10:00:00.000Z\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 — Missing or invalid targetProfileId",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"targetProfileId must be a valid MongoDB ObjectId\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "401 — Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Unauthorized\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "List My Conversations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/conversations?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "conversations"],
+              "query": [
+                { "key": "page", "value": "1", "description": "Page number (default: 1)" },
+                { "key": "limit", "value": "10", "description": "Results per page, max 100 (default: 10)" }
+              ]
+            },
+            "description": "Returns a paginated list of all conversations for the authenticated user."
+          },
+          "response": [
+            {
+              "name": "200 OK — Conversations list",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": [],\n  \"pagination\": {\n    \"total\": 0,\n    \"page\": 1,\n    \"limit\": 10,\n    \"totalPages\": 0\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "401 — Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Unauthorized\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chat/conversations/{{conversationId}}/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "conversations", "{{conversationId}}", "messages"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Hello, I have a question about my appointment.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Sends a message in the specified conversation.\n\n**Params:**\n- `conversationId` — set `{{conversationId}}` variable\n\n**Body:**\n- `content` *(string, required)* — 1–2000 characters"
+          },
+          "response": [
+            {
+              "name": "201 Created — Message sent",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"64f1a2b3c4d5e6f7a8b9c0d4\",\n    \"conversationId\": \"64f1a2b3c4d5e6f7a8b9c0d1\",\n    \"senderProfileId\": \"64f1a2b3c4d5e6f7a8b9c0d2\",\n    \"senderRole\": \"patient\",\n    \"content\": \"Hello, I have a question about my appointment.\",\n    \"readBy\": [],\n    \"createdAt\": \"2026-03-01T10:05:00.000Z\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 — Validation error",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Message content is required\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "403 — Not a participant",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Forbidden\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 — Conversation not found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Conversation not found\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Get Messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/conversations/{{conversationId}}/messages?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "conversations", "{{conversationId}}", "messages"],
+              "query": [
+                { "key": "page", "value": "1", "description": "Page number (default: 1)" },
+                { "key": "limit", "value": "20", "description": "Results per page, max 100 (default: 10)" }
+              ]
+            },
+            "description": "Returns paginated messages for a conversation. Only participants can access."
+          },
+          "response": [
+            {
+              "name": "200 OK — Messages list",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": [],\n  \"pagination\": {\n    \"total\": 0,\n    \"page\": 1,\n    \"limit\": 20,\n    \"totalPages\": 0\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "403 — Not a participant",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Forbidden\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 — Conversation not found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Conversation not found\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Mark Conversation as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/conversations/{{conversationId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "conversations", "{{conversationId}}", "read"]
+            },
+            "description": "Marks all unread messages in the specified conversation as read for the authenticated user."
+          },
+          "response": [
+            {
+              "name": "200 OK — Marked as read",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Messages marked as read\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "403 — Not a participant",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Forbidden\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 — Conversation not found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Conversation not found\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "unread-count"]
+            },
+            "description": "Returns the total number of unread messages across all conversations for the authenticated user."
+          },
+          "response": [
+            {
+              "name": "200 OK — Unread count",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"unreadCount\": 5\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "401 — Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Unauthorized\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Delete Conversation (Self Only)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/conversations/{{conversationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "conversations", "{{conversationId}}"]
+            },
+            "description": "Soft-deletes the conversation for the authenticated user only. The other participant is unaffected and can still see the conversation."
+          },
+          "response": [
+            {
+              "name": "200 OK — Deleted for self",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Conversation deleted for you. The other participant is unaffected.\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "403 — Not a participant",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Forbidden\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 — Conversation not found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"status\": \"fail\",\n  \"message\": \"Conversation not found\"\n}",
               "_postman_previewlanguage": "json"
             }
           ]
